@@ -244,7 +244,7 @@ const App = struct {
     }
 };
 
-pub fn main() anyerror!void {
+pub fn main() !void {
     rl.initWindow(screen_width, screen_height, window_title);
     defer rl.closeWindow();
 
