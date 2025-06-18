@@ -25,6 +25,8 @@ const hole_height = 170;
 const wall_height = 360;
 // 壁の幅
 const wall_width = 20;
+// 重力
+const gravity = 0.1;
 
 const file_names = [_][]const u8{
     "gopher",
@@ -63,7 +65,6 @@ const App = struct {
         .height = 75,
     },
     velocity: f32 = 0.0,
-    gravity: f32 = 0.1,
     frames: i32 = 0,
     old_score: i32 = 0,
     new_score: i32 = 0,
@@ -138,7 +139,7 @@ const App = struct {
         if (rl.isMouseButtonPressed(.left)) {
             self.velocity = jump;
         }
-        self.velocity += self.gravity;
+        self.velocity += gravity;
         self.gopher.y += self.velocity;
 
         self.frames += 1;
@@ -234,7 +235,6 @@ const App = struct {
             .height = 75,
         };
         self.velocity = 0.0;
-        self.gravity = 0.1;
         self.frames = 0;
         self.old_score = 0;
         self.new_score = 0;
