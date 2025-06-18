@@ -1,5 +1,14 @@
 ## flappy
 
+### Build
+```sh
+# Debug
+$ zig build
+
+# Release
+$ zig build -Doptimize=ReleaseFast
+```
+
 ### Play
 - [Click] - Move
 
