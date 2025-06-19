@@ -61,7 +61,7 @@ const Mino = struct {
 };
 
 const MinoPos = struct {
-    mino: ?*Mino,
+    mino: ?Mino,
     pos: GridPos,
 };
 
@@ -78,7 +78,7 @@ const InputState = struct {
 
 const App = struct {
     allocator: std.mem.Allocator,
-    grid: std.ArrayList(std.ArrayList(?*Mino)), // origin is top-left
+    grid: std.ArrayList(std.ArrayList(?Mino)), // origin is top-left
     upcoming_pieces: std.ArrayList(PieceType),
     bag: std.ArrayList(PieceType),
     held_piece: ?*PieceType = null,
@@ -96,11 +96,11 @@ const App = struct {
     rand: std.Random,
 
     fn init(allocator: std.mem.Allocator, rand: std.Random) !App {
-        var grid = try std.ArrayList(std.ArrayList(?*Mino)).initCapacity(allocator, cells_y);
+        var grid = try std.ArrayList(std.ArrayList(?Mino)).initCapacity(allocator, cells_y);
 
         for (0..cells_y) |_| {
-            const minos = try std.ArrayList(?*Mino).initCapacity(allocator, cells_x);
-            // const minos = std.ArrayList(?*Mino).init(allocator);
+            const minos = try std.ArrayList(?Mino).initCapacity(allocator, cells_x);
+            // const minos = std.ArrayList(?Mino).init(allocator);
             try grid.append(minos);
         }
 
@@ -131,11 +131,11 @@ const App = struct {
         // }
 
         for (0..self.grid.items.len) |i| {
-            for (0..self.grid.items[i].items.len) |j| {
-                if (self.grid.items[i].items[j]) |item| {
-                    self.allocator.destroy(item);
-                }
-            }
+            // for (0..self.grid.items[i].items.len) |j| {
+            //     if (self.grid.items[i].items[j]) |item| {
+            //         self.allocator.destroy(item);
+            //     }
+            // }
             self.grid.items[i].deinit();
         }
         self.grid.deinit();
@@ -244,6 +244,9 @@ const App = struct {
 
     fn update(self: *App) !bool {
         std.debug.print("  update in       \n", .{});
+        std.debug.print(":::: {d} {d}\n", .{
+            self.next_update, self.last_movement_update,
+        });
         // TODO (BUG?)
         self.next_update -= 1;
         self.last_movement_update += 1;
@@ -366,10 +369,10 @@ const App = struct {
                     }
                     if (row_full) {
                         cleared_rows += 1;
-                        for (0..self.grid.items[i].items.len) |j| {
-                            self.allocator.destroy(self.grid.items[i].items[j].?);
-                            // self.grid.items[i].items[j] = null;
-                        }
+                        // for (0..self.grid.items[i].items.len) |j| {
+                        //     self.allocator.destroy(self.grid.items[i].items[j].?);
+                        //     // self.grid.items[i].items[j] = null;
+                        // }
                         var k = i;
                         while (k != 0) : (k -= 1) {
                             for (0..self.grid.items[k].items.len) |j| {
@@ -405,16 +408,13 @@ const App = struct {
                 }
 
                 // Then, spawn in a new piece
-                if (!try self.spawnNewTetromino())
+                if (!try self.spawnNewTetromino()) {
                     return false;
+                }
             }
         }
 
-        // std.debug.print("::::       update::spawnNewTetromino finish {d} {d} >>> \n", .{
-        //     self.next_update,
-        //     self.last_movement_update,
-        // });
-
+        std.debug.print("  update end\n", .{});
         return true;
     }
 
@@ -475,11 +475,11 @@ const App = struct {
                 rl.drawRectangle(@intCast(x), @intCast(y), cell_size, cell_size, pieces.items[j].?.color);
             }
 
-            for (0..pieces.items.len) |j| {
-                if (pieces.items[j] != null) {
-                    self.allocator.destroy(pieces.items[j].?);
-                }
-            }
+            // for (0..pieces.items.len) |j| {
+            //     if (pieces.items[j] != null) {
+            //         self.allocator.destroy(pieces.items[j].?);
+            //     }
+            // }
             // YacDynamicArrayClearAndFree(pieces);
             pieces.deinit();
         }
@@ -496,13 +496,13 @@ const App = struct {
                 const y = margin + (j / 4) * cell_size + piece_size;
                 rl.drawRectangle(@intCast(x), @intCast(y), cell_size, cell_size, pieces.items[j].?.color);
             }
-            for (0..pieces.items.len) |j| {
-                if (pieces.items[j] != null) {
-                    // std.debug.print("  (HP)destroy-check       >>> {*}\n", .{pieces.items[j].?});
-                    self.allocator.destroy(pieces.items[j].?);
-                    // pieces.items[j] = null;
-                }
-            }
+            // for (0..pieces.items.len) |j| {
+            //     if (pieces.items[j] != null) {
+            //         // std.debug.print("  (HP)destroy-check       >>> {*}\n", .{pieces.items[j].?});
+            //         self.allocator.destroy(pieces.items[j].?);
+            //         // pieces.items[j] = null;
+            //     }
+            // }
 
             pieces.deinit();
             // YacDynamicArrayClearAndFree(pieces);
@@ -662,7 +662,8 @@ const App = struct {
                     continue;
                 // free(self.grid.items[i].items[j]);
                 // self.grid.items[i].items[j] = NULL;
-                self.allocator.destroy(self.grid.items[i].items[j].?);
+
+                // self.allocator.destroy(self.grid.items[i].items[j].?);
                 self.grid.items[i].items[j] = null;
                 change_occurred = true;
             }
@@ -689,7 +690,7 @@ const App = struct {
             if (pieces.items[i] == null)
                 continue;
 
-            std.debug.print(":::: {*}\n", .{self.grid.items[i / 4].items[(i % 4) + spawning_offset]});
+            // std.debug.print(":::: {*}\n", .{self.grid.items[i / 4].items[(i % 4) + spawning_offset]});
             if (self.grid.items[i / 4].items[(i % 4) + spawning_offset] != null) {
                 std.debug.print(" ---------------- \n", .{});
                 std.debug.print(" -- Game Over! -- \n", .{});
@@ -702,33 +703,36 @@ const App = struct {
                 //     }
                 // }
 
-                for (0..pieces.items.len) |j| {
-                    if (pieces.items[j]) |item| {
-                        // self.allocator.destroy(pieces.items[j].?);
-                        self.allocator.destroy(item);
-                    }
-                }
+                // for (0..pieces.items.len) |j| {
+                //     if (pieces.items[j]) |item| {
+                //         // self.allocator.destroy(pieces.items[j].?);
+                //         self.allocator.destroy(item);
+                //     }
+                // }
 
                 pieces.deinit();
                 return false;
             }
             // TODO ???STINK!!!!!!
             // self.grid.items[i / 4].items[(i % 4) + spawning_offset] = pieces.items[i];
-            if (self.grid.items[i / 4].items[(i % 4) + spawning_offset] != null) {
-                self.allocator.destroy(self.grid.items[i / 4].items[(i % 4) + spawning_offset].?);
-            }
-            const p = try self.allocator.create(Mino);
-            p.* = pieces.items[i].?.*;
-            self.grid.items[i / 4].items[(i % 4) + spawning_offset] = p;
-            // std.debug.print("::{*}\n", .{p});
+
+            // if (self.grid.items[i / 4].items[(i % 4) + spawning_offset] != null) {
+            //     self.allocator.destroy(self.grid.items[i / 4].items[(i % 4) + spawning_offset].?);
+            // }
+            //
+            // const p = try self.allocator.create(Mino);
+            // p.* = pieces.items[i].?.*;
+            // self.grid.items[i / 4].items[(i % 4) + spawning_offset] = p;
+
+            self.grid.items[i / 4].items[(i % 4) + spawning_offset] = pieces.items[i];
         }
 
-        for (0..pieces.items.len) |i| {
-            if (pieces.items[i]) |item| {
-                // self.allocator.destroy(pieces.items[j].?);
-                self.allocator.destroy(item);
-            }
-        }
+        // for (0..pieces.items.len) |i| {
+        //     if (pieces.items[i]) |item| {
+        //         // self.allocator.destroy(pieces.items[j].?);
+        //         self.allocator.destroy(item);
+        //     }
+        // }
         pieces.deinit();
 
         // std.debug.print("::::       spawnNewTetromino finish {d} {d} >>> \n", .{
@@ -738,102 +742,105 @@ const App = struct {
         return true;
     }
 
-    fn getPiece(self: *App, piece_type: PieceType, pivot: *GridPos) !std.ArrayList(?*Mino) {
-        var pieces = try std.ArrayList(?*Mino).initCapacity(self.allocator, 8);
+    fn getPiece(self: *App, piece_type: PieceType, pivot: *GridPos) !std.ArrayList(?Mino) {
+        var pieces = try std.ArrayList(?Mino).initCapacity(self.allocator, 8);
 
         switch (piece_type) {
             .i => {
                 pivot.* = GridPos{ .x = 1, .y = 0 };
-                try pieces.append(try self.minoInit(i_piece_color, true));
-                try pieces.append(try self.minoInit(i_piece_color, true));
-                try pieces.append(try self.minoInit(i_piece_color, true));
-                try pieces.append(try self.minoInit(i_piece_color, true));
+                try pieces.append(minoInit(i_piece_color, true));
+                try pieces.append(minoInit(i_piece_color, true));
+                try pieces.append(minoInit(i_piece_color, true));
+                try pieces.append(minoInit(i_piece_color, true));
             },
             .j => {
                 pivot.* = GridPos{ .x = 1, .y = 1 };
-                try pieces.append(try self.minoInit(j_piece_color, true));
+                try pieces.append(minoInit(j_piece_color, true));
                 try pieces.append(null);
                 try pieces.append(null);
                 try pieces.append(null);
-                try pieces.append(try self.minoInit(j_piece_color, true));
-                try pieces.append(try self.minoInit(j_piece_color, true));
-                try pieces.append(try self.minoInit(j_piece_color, true));
+                try pieces.append(minoInit(j_piece_color, true));
+                try pieces.append(minoInit(j_piece_color, true));
+                try pieces.append(minoInit(j_piece_color, true));
                 try pieces.append(null);
             },
             .l => {
                 pivot.* = GridPos{ .x = 1, .y = 1 };
                 try pieces.append(null);
                 try pieces.append(null);
-                try pieces.append(try self.minoInit(l_piece_color, true));
+                try pieces.append(minoInit(l_piece_color, true));
                 try pieces.append(null);
-                try pieces.append(try self.minoInit(l_piece_color, true));
-                try pieces.append(try self.minoInit(l_piece_color, true));
-                try pieces.append(try self.minoInit(l_piece_color, true));
+                try pieces.append(minoInit(l_piece_color, true));
+                try pieces.append(minoInit(l_piece_color, true));
+                try pieces.append(minoInit(l_piece_color, true));
                 try pieces.append(null);
             },
             .o => {
                 pivot.* = GridPos{ .x = 0, .y = 0 };
                 try pieces.append(null);
-                try pieces.append(try self.minoInit(o_piece_color, true));
-                try pieces.append(try self.minoInit(o_piece_color, true));
+                try pieces.append(minoInit(o_piece_color, true));
+                try pieces.append(minoInit(o_piece_color, true));
                 try pieces.append(null);
                 try pieces.append(null);
-                try pieces.append(try self.minoInit(o_piece_color, true));
-                try pieces.append(try self.minoInit(o_piece_color, true));
+                try pieces.append(minoInit(o_piece_color, true));
+                try pieces.append(minoInit(o_piece_color, true));
                 try pieces.append(null);
             },
             .t => {
                 pivot.* = GridPos{ .x = 1, .y = 1 };
                 try pieces.append(null);
-                try pieces.append(try self.minoInit(t_piece_color, true));
+                try pieces.append(minoInit(t_piece_color, true));
                 try pieces.append(null);
                 try pieces.append(null);
-                try pieces.append(try self.minoInit(t_piece_color, true));
-                try pieces.append(try self.minoInit(t_piece_color, true));
-                try pieces.append(try self.minoInit(t_piece_color, true));
+                try pieces.append(minoInit(t_piece_color, true));
+                try pieces.append(minoInit(t_piece_color, true));
+                try pieces.append(minoInit(t_piece_color, true));
                 try pieces.append(null);
             },
             .s => {
                 pivot.* = GridPos{ .x = 1, .y = 1 };
                 try pieces.append(null);
-                try pieces.append(try self.minoInit(s_piece_color, true));
-                try pieces.append(try self.minoInit(s_piece_color, true));
+                try pieces.append(minoInit(s_piece_color, true));
+                try pieces.append(minoInit(s_piece_color, true));
                 try pieces.append(null);
-                try pieces.append(try self.minoInit(s_piece_color, true));
-                try pieces.append(try self.minoInit(s_piece_color, true));
+                try pieces.append(minoInit(s_piece_color, true));
+                try pieces.append(minoInit(s_piece_color, true));
                 try pieces.append(null);
                 try pieces.append(null);
             },
             .z => {
                 pivot.* = GridPos{ .x = 1, .y = 1 };
-                try pieces.append(try self.minoInit(z_piece_color, true));
-                try pieces.append(try self.minoInit(z_piece_color, true));
+                try pieces.append(minoInit(z_piece_color, true));
+                try pieces.append(minoInit(z_piece_color, true));
                 try pieces.append(null);
                 try pieces.append(null);
                 try pieces.append(null);
-                try pieces.append(try self.minoInit(z_piece_color, true));
-                try pieces.append(try self.minoInit(z_piece_color, true));
+                try pieces.append(minoInit(z_piece_color, true));
+                try pieces.append(minoInit(z_piece_color, true));
                 try pieces.append(null);
             },
         }
         return pieces;
     }
-
-    fn minoInit(self: *App, color: rl.Color, is_dynamic: bool) !?*Mino {
-        const mino = try self.allocator.create(Mino);
-        // mino.*.color = color;
-        // mino.*.is_dynamic = is_dynamic;
-        mino.* = Mino{
-            .color = color,
-            .is_dynamic = is_dynamic,
-        };
-
-        // std.debug.print("minoInit pointer-check       >>> {*}\n", .{mino});
-        // mino.color = color;
-        // mino.is_dynamic = is_dynamic;
-        return mino;
-    }
 };
+
+fn minoInit(color: rl.Color, is_dynamic: bool) ?Mino {
+    // const mino = try self.allocator.create(Mino);
+    // mino.* = Mino{
+    //     .color = color,
+    //     .is_dynamic = is_dynamic,
+    // };
+    // return mino;
+
+    return Mino{
+        .color = color,
+        .is_dynamic = is_dynamic,
+    };
+
+    // std.debug.print("minoInit pointer-check       >>> {*}\n", .{mino});
+    // mino.color = color;
+    // mino.is_dynamic = is_dynamic;
+}
 
 pub fn main() !void {
     rl.initWindow(screen_width, screen_height, window_title);
