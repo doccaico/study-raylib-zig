@@ -100,6 +100,7 @@ const App = struct {
 
         for (0..cells_y) |_| {
             const minos = try std.ArrayList(?*Mino).initCapacity(allocator, cells_x);
+            // const minos = std.ArrayList(?*Mino).init(allocator);
             try grid.append(minos);
         }
 
@@ -109,12 +110,10 @@ const App = struct {
             }
         }
 
-        const upcoming_pieces = try std.ArrayList(PieceType).initCapacity(allocator, max_piece_queue);
-
         var app = App{
             .allocator = allocator,
             .grid = grid,
-            .upcoming_pieces = upcoming_pieces,
+            .upcoming_pieces = try std.ArrayList(PieceType).initCapacity(allocator, max_piece_queue),
             .bag = std.ArrayList(PieceType).init(allocator),
             .rand = rand,
         };
@@ -131,31 +130,36 @@ const App = struct {
         //     item.deinit();
         // }
 
-        // for (0..self.grid.items.len) |i| {
-        //     for (0..self.grid.items[i].items.len) |j| {
-        //         if (self.grid.items[i].items[j]) |item| {
-        //             self.allocator.destroy(item);
-        //         }
-        //     }
-        //     self.grid.items[i].deinit();
-        // }
-        // self.grid.deinit();
-
         for (0..self.grid.items.len) |i| {
+            for (0..self.grid.items[i].items.len) |j| {
+                if (self.grid.items[i].items[j]) |item| {
+                    self.allocator.destroy(item);
+                }
+            }
             self.grid.items[i].deinit();
         }
         self.grid.deinit();
 
+        // for (0..self.grid.items.len) |i| {
+        //     self.grid.items[i].deinit();
+        // }
+        // self.grid.deinit();
+
         self.upcoming_pieces.deinit();
 
         self.bag.deinit();
+
+        if (self.held_piece) |hp| {
+            // self.allocator.destroy(self.held_piece.?);
+            self.allocator.destroy(hp);
+        }
     }
 
     fn pickNewPiece(self: *App) !PieceType {
-        if (self.bag.items.len == 0) try self.fillBag();
-        const piece_index = std.Random.intRangeAtMost(self.rand, usize, 0, self.bag.items.len - 1);
-        const piece = self.bag.items[piece_index];
-        _ = self.bag.orderedRemove(piece_index);
+        if (self.bag.items.len == 0)
+            try self.fillBag();
+        const random_index = std.Random.intRangeAtMost(self.rand, usize, 0, self.bag.items.len - 1);
+        const piece = self.bag.orderedRemove(random_index);
         return piece;
     }
 
@@ -176,7 +180,7 @@ const App = struct {
         for (0..self.grid.items.len) |i| {
             for (0..self.grid.items[i].items.len) |j| {
                 const mino = self.grid.items[i].items[j];
-                if (self.grid.items[i].items[j] == null or mino == null or !mino.?.is_dynamic)
+                if (mino == null or !mino.?.is_dynamic)
                     continue;
                 const mino_pos = MinoPos{ .mino = mino, .pos = GridPos{ .x = @intCast(j), .y = @intCast(i) } };
                 try mino_positions.append(mino_pos);
@@ -207,13 +211,12 @@ const App = struct {
             self.grid.items[j].items[k] = new_mino_positions.items[i].mino;
         }
 
-        if (!(new_mino_positions.items.len == 0))
+        // std.debug.print("::::       CLEAR 000000 {d}>>> \n", .{new_mino_positions.items.len});
+        if (!(new_mino_positions.items.len == 0)) {
             self.last_movement_update = 0;
+        }
 
         const ret = !(new_mino_positions.items.len == 0);
-
-        mino_positions.deinit();
-        new_mino_positions.deinit();
 
         return ret;
     }
@@ -240,6 +243,7 @@ const App = struct {
     }
 
     fn update(self: *App) !bool {
+        std.debug.print("  update in       \n", .{});
         // TODO (BUG?)
         self.next_update -= 1;
         self.last_movement_update += 1;
@@ -363,12 +367,9 @@ const App = struct {
                     if (row_full) {
                         cleared_rows += 1;
                         for (0..self.grid.items[i].items.len) |j| {
-                            // After TODO
-                            // free(self.grid.items[i].items[j]);
                             self.allocator.destroy(self.grid.items[i].items[j].?);
-                            self.grid.items[i].items[j] = null;
+                            // self.grid.items[i].items[j] = null;
                         }
-                        // for (size_t k = i; k != 0; --k) {
                         var k = i;
                         while (k != 0) : (k -= 1) {
                             for (0..self.grid.items[k].items.len) |j| {
@@ -408,6 +409,12 @@ const App = struct {
                     return false;
             }
         }
+
+        // std.debug.print("::::       update::spawnNewTetromino finish {d} {d} >>> \n", .{
+        //     self.next_update,
+        //     self.last_movement_update,
+        // });
+
         return true;
     }
 
@@ -424,8 +431,17 @@ const App = struct {
         // Draw minos
         for (0..self.grid.items.len) |i| {
             for (0..self.grid.items[i].items.len) |j| {
-                if (self.grid.items[i].items[j] != null)
-                    rl.drawRectangle(@as(i32, @intCast(j)) * cell_size, @as(i32, @intCast(i)) * cell_size, cell_size, cell_size, self.grid.items[i].items[j].?.color);
+                // if (self.grid.items[i].items[j] != null)
+                //     rl.drawRectangle(@as(i32, @intCast(j)) * cell_size, @as(i32, @intCast(i)) * cell_size, cell_size, cell_size, self.grid.items[i].items[j].?.color);
+                if (self.grid.items[i].items[j]) |item| {
+                    rl.drawRectangle(@as(i32, @intCast(j)) * cell_size, @as(i32, @intCast(i)) * cell_size, cell_size, cell_size, item.color);
+                    // rl.drawRectangle(0, 4 * cell_size, cell_size, cell_size, .red);
+                }
+
+                // if (null == self.grid.items[i].items[j]) {
+                //     std.debug.print("::::       NULL >>> \n", .{});
+                // }
+                // std.debug.print(" {*}", .{&self.grid.items[i].items[j].?.color});
             }
         }
 
@@ -459,17 +475,41 @@ const App = struct {
                 rl.drawRectangle(@intCast(x), @intCast(y), cell_size, cell_size, pieces.items[j].?.color);
             }
 
-            for (0..pieces.items.len) |k| {
-                if (pieces.items[k]) |item| {
-                    // self.allocator.destroy(pieces.items[j].?);
-                    self.allocator.destroy(item);
+            for (0..pieces.items.len) |j| {
+                if (pieces.items[j] != null) {
+                    self.allocator.destroy(pieces.items[j].?);
                 }
             }
             // YacDynamicArrayClearAndFree(pieces);
             pieces.deinit();
         }
+
+        // Draw held piece
+        rl.drawRectangle(@intCast(self.grid.items[0].items.len * cell_size + margin), piece_size, piece_size, piece_size, .dark_gray);
+        if (self.held_piece) |hp| {
+            var pos: GridPos = undefined;
+            const pieces = try self.getPiece(hp.*, &pos);
+            for (0..pieces.items.len) |j| {
+                if (pieces.items[j] == null)
+                    continue;
+                const x = self.grid.items[0].items.len * cell_size + margin + (j % 4) * cell_size;
+                const y = margin + (j / 4) * cell_size + piece_size;
+                rl.drawRectangle(@intCast(x), @intCast(y), cell_size, cell_size, pieces.items[j].?.color);
+            }
+            for (0..pieces.items.len) |j| {
+                if (pieces.items[j] != null) {
+                    // std.debug.print("  (HP)destroy-check       >>> {*}\n", .{pieces.items[j].?});
+                    self.allocator.destroy(pieces.items[j].?);
+                    // pieces.items[j] = null;
+                }
+            }
+
+            pieces.deinit();
+            // YacDynamicArrayClearAndFree(pieces);
+        }
     }
 
+    // Returns whether anything changed input should be (-1, 1) to move it left and down
     fn moveDynamicMinos(self: *App, right: isize, down: isize) bool {
         var change_occurred = false;
 
@@ -479,20 +519,20 @@ const App = struct {
             var dynamic_minos_movable = true;
             var dynamic_minos_present = false;
 
-            for (self.grid.items) |item_i| {
-                for (item_i.items, 0..) |item_j, j| {
-                    const mino = item_j;
+            for (0..self.grid.items.len) |i| {
+                for (0..self.grid.items[i].items.len) |j| {
+                    const mino = self.grid.items[i].items[j];
                     const j_isize = @as(isize, @intCast(j));
                     if (mino == null or !mino.?.is_dynamic)
                         continue;
                     dynamic_minos_present = true;
-                    if (j_isize + right < 0 or j_isize + right >= item_i.items.len) {
+                    if (j_isize + right < 0 or j_isize + right >= self.grid.items[i].items.len) {
                         dynamic_minos_movable = false;
                         break;
                     }
-                    if (item_i.items[@as(usize, @intCast(j_isize + right))] == null)
+                    if (self.grid.items[i].items[@as(usize, @intCast(j_isize + right))] == null)
                         continue;
-                    const mino_goal = item_j;
+                    const mino_goal = self.grid.items[i].items[j];
                     if (!mino_goal.?.is_dynamic) {
                         dynamic_minos_movable = false;
                         break;
@@ -528,6 +568,7 @@ const App = struct {
 
         // 2. Move vertically
         if (down != 0) {
+            // std.debug.print(":::: DOWN      >>> \n", .{});
             // Check if minos can move
             var dynamic_minos_movable = true;
             var dynamic_minos_present = false;
@@ -559,9 +600,10 @@ const App = struct {
             const end: isize = if (down > 0) -1 else @intCast(self.grid.items.len);
             const step: isize = if (down > 0) -1 else 1;
             if (dynamic_minos_movable and dynamic_minos_present) {
+                // std.debug.print(":::: TRUE      >>> \n", .{});
                 self.pivot.y += down;
+                const i_usize = @as(usize, @intCast(start));
                 var i = start;
-                const i_usize = @as(usize, @intCast(i));
                 while (i != end) : (i += step) {
                     for (0..self.grid.items[i_usize].items.len) |j| {
                         if (self.grid.items[i_usize].items[j] == null)
@@ -578,6 +620,7 @@ const App = struct {
                 }
             }
         }
+
         if (change_occurred)
             self.last_movement_update = 0;
 
@@ -645,33 +688,53 @@ const App = struct {
         for (0..pieces.items.len) |i| {
             if (pieces.items[i] == null)
                 continue;
+
+            std.debug.print(":::: {*}\n", .{self.grid.items[i / 4].items[(i % 4) + spawning_offset]});
             if (self.grid.items[i / 4].items[(i % 4) + spawning_offset] != null) {
-                std.debug.print(" ---------------- ", .{});
-                std.debug.print(" -- Game Over! -- ", .{});
-                std.debug.print(" ---------------- ", .{});
+                std.debug.print(" ---------------- \n", .{});
+                std.debug.print(" -- Game Over! -- \n", .{});
+                std.debug.print(" ---------------- \n", .{});
                 // YacDynamicArrayClearAndFree(pieces);
+                // for (0..pieces.items.len) |j| {
+                //     if (pieces.items[j]) |item| {
+                //         // self.allocator.destroy(pieces.items[j].?);
+                //         self.allocator.destroy(item);
+                //     }
+                // }
+
                 for (0..pieces.items.len) |j| {
                     if (pieces.items[j]) |item| {
                         // self.allocator.destroy(pieces.items[j].?);
                         self.allocator.destroy(item);
                     }
                 }
-                // pieces.deinit();
-                std.debug.print("::::       FALSE>>> \n", .{});
+
+                pieces.deinit();
                 return false;
             }
-            self.grid.items[i / 4].items[(i % 4) + spawning_offset] = pieces.items[i];
+            // TODO ???STINK!!!!!!
+            // self.grid.items[i / 4].items[(i % 4) + spawning_offset] = pieces.items[i];
+            if (self.grid.items[i / 4].items[(i % 4) + spawning_offset] != null) {
+                self.allocator.destroy(self.grid.items[i / 4].items[(i % 4) + spawning_offset].?);
+            }
+            const p = try self.allocator.create(Mino);
+            p.* = pieces.items[i].?.*;
+            self.grid.items[i / 4].items[(i % 4) + spawning_offset] = p;
+            // std.debug.print("::{*}\n", .{p});
         }
 
-        for (0..pieces.items.len) |j| {
-            if (pieces.items[j]) |item| {
+        for (0..pieces.items.len) |i| {
+            if (pieces.items[i]) |item| {
                 // self.allocator.destroy(pieces.items[j].?);
                 self.allocator.destroy(item);
             }
         }
         pieces.deinit();
 
-        std.debug.print("::::       TRUE>>> \n", .{});
+        // std.debug.print("::::       spawnNewTetromino finish {d} {d} >>> \n", .{
+        //     self.next_update,
+        //     self.last_movement_update,
+        // });
         return true;
     }
 
@@ -757,9 +820,17 @@ const App = struct {
     }
 
     fn minoInit(self: *App, color: rl.Color, is_dynamic: bool) !?*Mino {
-        var mino = try self.allocator.create(Mino);
-        mino.color = color;
-        mino.is_dynamic = is_dynamic;
+        const mino = try self.allocator.create(Mino);
+        // mino.*.color = color;
+        // mino.*.is_dynamic = is_dynamic;
+        mino.* = Mino{
+            .color = color,
+            .is_dynamic = is_dynamic,
+        };
+
+        // std.debug.print("minoInit pointer-check       >>> {*}\n", .{mino});
+        // mino.color = color;
+        // mino.is_dynamic = is_dynamic;
         return mino;
     }
 };
@@ -779,11 +850,7 @@ pub fn main() !void {
     const rand = prng.random();
 
     var gpa: std.heap.DebugAllocator(.{}) = .init;
-    // _ = gpa;
-    // const allocator = std.heap.c_allocator;
-
     const allocator = if (builtin.mode == .Debug) gpa.allocator() else std.heap.c_allocator;
-    //
     defer if (builtin.mode == .Debug) {
         _ = gpa.deinit();
     };
