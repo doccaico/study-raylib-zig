@@ -1,5 +1,14 @@
 ## tetris
 
+### Build
+```sh
+# Debug
+$ zig build
+
+# Release
+$ zig build -Doptimize=ReleaseFast
+```
+
 ### Play
 | Key | Action |
 | - | - |
