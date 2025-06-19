@@ -100,7 +100,6 @@ const App = struct {
 
         for (0..cells_y) |_| {
             const minos = try std.ArrayList(?Mino).initCapacity(allocator, cells_x);
-            // const minos = std.ArrayList(?Mino).init(allocator);
             try grid.append(minos);
         }
 
@@ -126,31 +125,16 @@ const App = struct {
     }
 
     fn deinit(self: *App) void {
-        // for (self.grid.items) |*item| {
-        //     item.deinit();
-        // }
-
         for (0..self.grid.items.len) |i| {
-            // for (0..self.grid.items[i].items.len) |j| {
-            //     if (self.grid.items[i].items[j]) |item| {
-            //         self.allocator.destroy(item);
-            //     }
-            // }
             self.grid.items[i].deinit();
         }
         self.grid.deinit();
-
-        // for (0..self.grid.items.len) |i| {
-        //     self.grid.items[i].deinit();
-        // }
-        // self.grid.deinit();
 
         self.upcoming_pieces.deinit();
 
         self.bag.deinit();
 
         if (self.held_piece) |hp| {
-            // self.allocator.destroy(self.held_piece.?);
             self.allocator.destroy(hp);
         }
     }
@@ -211,7 +195,6 @@ const App = struct {
             self.grid.items[j].items[k] = new_mino_positions.items[i].mino;
         }
 
-        // std.debug.print("::::       CLEAR 000000 {d}>>> \n", .{new_mino_positions.items.len});
         if (!(new_mino_positions.items.len == 0)) {
             self.last_movement_update = 0;
         }
@@ -243,11 +226,6 @@ const App = struct {
     }
 
     fn update(self: *App) !bool {
-        std.debug.print("  update in       \n", .{});
-        std.debug.print(":::: {d} {d}\n", .{
-            self.next_update, self.last_movement_update,
-        });
-        // TODO (BUG?)
         self.next_update -= 1;
         self.last_movement_update += 1;
 
@@ -343,7 +321,6 @@ const App = struct {
             if (self.last_movement_update < piece_statification_delay and !mid_air)
                 return true;
 
-            // TODO (BUG?)
             // Make minos static
             if (!self.moveDynamicMinos(0, 1)) {
                 for (0..self.grid.items.len) |i| {
@@ -369,10 +346,6 @@ const App = struct {
                     }
                     if (row_full) {
                         cleared_rows += 1;
-                        // for (0..self.grid.items[i].items.len) |j| {
-                        //     self.allocator.destroy(self.grid.items[i].items[j].?);
-                        //     // self.grid.items[i].items[j] = null;
-                        // }
                         var k = i;
                         while (k != 0) : (k -= 1) {
                             for (0..self.grid.items[k].items.len) |j| {
@@ -431,17 +404,9 @@ const App = struct {
         // Draw minos
         for (0..self.grid.items.len) |i| {
             for (0..self.grid.items[i].items.len) |j| {
-                // if (self.grid.items[i].items[j] != null)
-                //     rl.drawRectangle(@as(i32, @intCast(j)) * cell_size, @as(i32, @intCast(i)) * cell_size, cell_size, cell_size, self.grid.items[i].items[j].?.color);
                 if (self.grid.items[i].items[j]) |item| {
                     rl.drawRectangle(@as(i32, @intCast(j)) * cell_size, @as(i32, @intCast(i)) * cell_size, cell_size, cell_size, item.color);
-                    // rl.drawRectangle(0, 4 * cell_size, cell_size, cell_size, .red);
                 }
-
-                // if (null == self.grid.items[i].items[j]) {
-                //     std.debug.print("::::       NULL >>> \n", .{});
-                // }
-                // std.debug.print(" {*}", .{&self.grid.items[i].items[j].?.color});
             }
         }
 
@@ -474,13 +439,6 @@ const App = struct {
                 const y = (margin + (i * piece_size) + (j / 4) * cell_size + (piece_size * 2));
                 rl.drawRectangle(@intCast(x), @intCast(y), cell_size, cell_size, pieces.items[j].?.color);
             }
-
-            // for (0..pieces.items.len) |j| {
-            //     if (pieces.items[j] != null) {
-            //         self.allocator.destroy(pieces.items[j].?);
-            //     }
-            // }
-            // YacDynamicArrayClearAndFree(pieces);
             pieces.deinit();
         }
 
@@ -496,16 +454,8 @@ const App = struct {
                 const y = margin + (j / 4) * cell_size + piece_size;
                 rl.drawRectangle(@intCast(x), @intCast(y), cell_size, cell_size, pieces.items[j].?.color);
             }
-            // for (0..pieces.items.len) |j| {
-            //     if (pieces.items[j] != null) {
-            //         // std.debug.print("  (HP)destroy-check       >>> {*}\n", .{pieces.items[j].?});
-            //         self.allocator.destroy(pieces.items[j].?);
-            //         // pieces.items[j] = null;
-            //     }
-            // }
 
             pieces.deinit();
-            // YacDynamicArrayClearAndFree(pieces);
         }
     }
 
@@ -568,7 +518,6 @@ const App = struct {
 
         // 2. Move vertically
         if (down != 0) {
-            // std.debug.print(":::: DOWN      >>> \n", .{});
             // Check if minos can move
             var dynamic_minos_movable = true;
             var dynamic_minos_present = false;
@@ -599,21 +548,20 @@ const App = struct {
             const start: isize = if (down > 0) @as(isize, @intCast(self.grid.items.len)) - 1 else 0;
             const end: isize = if (down > 0) -1 else @intCast(self.grid.items.len);
             const step: isize = if (down > 0) -1 else 1;
+
             if (dynamic_minos_movable and dynamic_minos_present) {
-                // std.debug.print(":::: TRUE      >>> \n", .{});
                 self.pivot.y += down;
-                const i_usize = @as(usize, @intCast(start));
                 var i = start;
                 while (i != end) : (i += step) {
-                    for (0..self.grid.items[i_usize].items.len) |j| {
-                        if (self.grid.items[i_usize].items[j] == null)
+                    for (0..self.grid.items[@as(usize, @intCast(i))].items.len) |j| {
+                        if (self.grid.items[@as(usize, @intCast(i))].items[j] == null)
                             continue;
-                        const mino = self.grid.items[i_usize].items[j];
+                        const mino = self.grid.items[@as(usize, @intCast(i))].items[j];
                         if (mino == null or !mino.?.is_dynamic)
                             continue;
-                        if (self.grid.items[i_usize + @as(usize, @intCast(down))].items[j] == null) {
-                            self.grid.items[i_usize + @as(usize, @intCast(down))].items[j] = self.grid.items[i_usize].items[j];
-                            self.grid.items[i_usize].items[j] = null;
+                        if (self.grid.items[@as(usize, @intCast(i)) + @as(usize, @intCast(down))].items[j] == null) {
+                            self.grid.items[@as(usize, @intCast(i)) + @as(usize, @intCast(down))].items[j] = self.grid.items[@as(usize, @intCast(i))].items[j];
+                            self.grid.items[@as(usize, @intCast(i))].items[j] = null;
                             change_occurred = true;
                         }
                     }
@@ -660,10 +608,6 @@ const App = struct {
                 const mino = self.grid.items[i].items[j];
                 if (mino == null or !mino.?.is_dynamic)
                     continue;
-                // free(self.grid.items[i].items[j]);
-                // self.grid.items[i].items[j] = NULL;
-
-                // self.allocator.destroy(self.grid.items[i].items[j].?);
                 self.grid.items[i].items[j] = null;
                 change_occurred = true;
             }
@@ -690,55 +634,20 @@ const App = struct {
             if (pieces.items[i] == null)
                 continue;
 
-            // std.debug.print(":::: {*}\n", .{self.grid.items[i / 4].items[(i % 4) + spawning_offset]});
             if (self.grid.items[i / 4].items[(i % 4) + spawning_offset] != null) {
                 std.debug.print(" ---------------- \n", .{});
                 std.debug.print(" -- Game Over! -- \n", .{});
                 std.debug.print(" ---------------- \n", .{});
-                // YacDynamicArrayClearAndFree(pieces);
-                // for (0..pieces.items.len) |j| {
-                //     if (pieces.items[j]) |item| {
-                //         // self.allocator.destroy(pieces.items[j].?);
-                //         self.allocator.destroy(item);
-                //     }
-                // }
-
-                // for (0..pieces.items.len) |j| {
-                //     if (pieces.items[j]) |item| {
-                //         // self.allocator.destroy(pieces.items[j].?);
-                //         self.allocator.destroy(item);
-                //     }
-                // }
 
                 pieces.deinit();
                 return false;
             }
-            // TODO ???STINK!!!!!!
-            // self.grid.items[i / 4].items[(i % 4) + spawning_offset] = pieces.items[i];
-
-            // if (self.grid.items[i / 4].items[(i % 4) + spawning_offset] != null) {
-            //     self.allocator.destroy(self.grid.items[i / 4].items[(i % 4) + spawning_offset].?);
-            // }
-            //
-            // const p = try self.allocator.create(Mino);
-            // p.* = pieces.items[i].?.*;
-            // self.grid.items[i / 4].items[(i % 4) + spawning_offset] = p;
 
             self.grid.items[i / 4].items[(i % 4) + spawning_offset] = pieces.items[i];
         }
 
-        // for (0..pieces.items.len) |i| {
-        //     if (pieces.items[i]) |item| {
-        //         // self.allocator.destroy(pieces.items[j].?);
-        //         self.allocator.destroy(item);
-        //     }
-        // }
         pieces.deinit();
 
-        // std.debug.print("::::       spawnNewTetromino finish {d} {d} >>> \n", .{
-        //     self.next_update,
-        //     self.last_movement_update,
-        // });
         return true;
     }
 
@@ -825,21 +734,10 @@ const App = struct {
 };
 
 fn minoInit(color: rl.Color, is_dynamic: bool) ?Mino {
-    // const mino = try self.allocator.create(Mino);
-    // mino.* = Mino{
-    //     .color = color,
-    //     .is_dynamic = is_dynamic,
-    // };
-    // return mino;
-
     return Mino{
         .color = color,
         .is_dynamic = is_dynamic,
     };
-
-    // std.debug.print("minoInit pointer-check       >>> {*}\n", .{mino});
-    // mino.color = color;
-    // mino.is_dynamic = is_dynamic;
 }
 
 pub fn main() !void {
