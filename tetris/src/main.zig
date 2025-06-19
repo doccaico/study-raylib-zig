@@ -32,6 +32,7 @@ const drop_speed = 30; // Every X frames, drop minos by 1 cell
 const sped_up_drop_speed = 2;
 const level_up_speed_increase = 0.85;
 const piece_statification_delay = 30;
+const lines_needed_for_level_up = 10;
 
 // Backend game settings
 const piece_lookahead = 3;
@@ -39,7 +40,6 @@ const max_piece_queue = 20;
 const das_delay = 10; // Delay before auto-shift starts (in frames)
 const arr_rate = 2; // Frames between auto-shift after DAS start
 
-// Pieces
 const PieceType = enum {
     i,
     j,
@@ -57,7 +57,7 @@ const GridPos = struct {
 
 const Mino = struct {
     color: rl.Color,
-    is_dynamic: bool,
+    is_dynamic: bool = true,
 };
 
 const MinoPos = struct {
@@ -83,7 +83,7 @@ const App = struct {
     bag: std.ArrayList(PieceType),
     held_piece: ?*PieceType = null,
     current_piece: PieceType = undefined,
-    next_update: usize = drop_speed,
+    next_update: isize = drop_speed,
     input_state: InputState = InputState{},
     pivot: GridPos = undefined,
     last_movement_update: usize = 0,
@@ -298,7 +298,7 @@ const App = struct {
 
         // Update grid state
         if (self.next_update == 0) {
-            self.next_update = drop_speed * @as(usize, @intFromFloat(self.speed));
+            self.next_update = @as(isize, @intFromFloat(drop_speed * self.speed));
             if (self.input_state.down_pressed_last_frame and self.next_update > sped_up_drop_speed)
                 self.next_update = sped_up_drop_speed;
 
@@ -355,9 +355,10 @@ const App = struct {
                         }
                     }
                 }
+
                 self.lines_cleared += cleared_rows;
                 const prev_level = self.level;
-                self.level = self.lines_cleared / 10;
+                self.level = self.lines_cleared / lines_needed_for_level_up;
                 if (self.level != prev_level)
                     self.speed *= level_up_speed_increase;
                 if (cleared_rows > 0) {
@@ -387,7 +388,6 @@ const App = struct {
             }
         }
 
-        std.debug.print("  update end\n", .{});
         return true;
     }
 
@@ -647,7 +647,6 @@ const App = struct {
         }
 
         pieces.deinit();
-
         return true;
     }
 
@@ -657,88 +656,81 @@ const App = struct {
         switch (piece_type) {
             .i => {
                 pivot.* = GridPos{ .x = 1, .y = 0 };
-                try pieces.append(minoInit(i_piece_color, true));
-                try pieces.append(minoInit(i_piece_color, true));
-                try pieces.append(minoInit(i_piece_color, true));
-                try pieces.append(minoInit(i_piece_color, true));
+                try pieces.append(Mino{ .color = i_piece_color });
+                try pieces.append(Mino{ .color = i_piece_color });
+                try pieces.append(Mino{ .color = i_piece_color });
+                try pieces.append(Mino{ .color = i_piece_color });
             },
             .j => {
                 pivot.* = GridPos{ .x = 1, .y = 1 };
-                try pieces.append(minoInit(j_piece_color, true));
+                try pieces.append(Mino{ .color = j_piece_color });
                 try pieces.append(null);
                 try pieces.append(null);
                 try pieces.append(null);
-                try pieces.append(minoInit(j_piece_color, true));
-                try pieces.append(minoInit(j_piece_color, true));
-                try pieces.append(minoInit(j_piece_color, true));
+                try pieces.append(Mino{ .color = j_piece_color });
+                try pieces.append(Mino{ .color = j_piece_color });
+                try pieces.append(Mino{ .color = j_piece_color });
                 try pieces.append(null);
             },
             .l => {
                 pivot.* = GridPos{ .x = 1, .y = 1 };
                 try pieces.append(null);
                 try pieces.append(null);
-                try pieces.append(minoInit(l_piece_color, true));
+                try pieces.append(Mino{ .color = l_piece_color });
                 try pieces.append(null);
-                try pieces.append(minoInit(l_piece_color, true));
-                try pieces.append(minoInit(l_piece_color, true));
-                try pieces.append(minoInit(l_piece_color, true));
+                try pieces.append(Mino{ .color = l_piece_color });
+                try pieces.append(Mino{ .color = l_piece_color });
+                try pieces.append(Mino{ .color = l_piece_color });
                 try pieces.append(null);
             },
             .o => {
                 pivot.* = GridPos{ .x = 0, .y = 0 };
                 try pieces.append(null);
-                try pieces.append(minoInit(o_piece_color, true));
-                try pieces.append(minoInit(o_piece_color, true));
+                try pieces.append(Mino{ .color = o_piece_color });
+                try pieces.append(Mino{ .color = o_piece_color });
                 try pieces.append(null);
                 try pieces.append(null);
-                try pieces.append(minoInit(o_piece_color, true));
-                try pieces.append(minoInit(o_piece_color, true));
+                try pieces.append(Mino{ .color = o_piece_color });
+                try pieces.append(Mino{ .color = o_piece_color });
                 try pieces.append(null);
             },
             .t => {
                 pivot.* = GridPos{ .x = 1, .y = 1 };
                 try pieces.append(null);
-                try pieces.append(minoInit(t_piece_color, true));
+                try pieces.append(Mino{ .color = t_piece_color });
                 try pieces.append(null);
                 try pieces.append(null);
-                try pieces.append(minoInit(t_piece_color, true));
-                try pieces.append(minoInit(t_piece_color, true));
-                try pieces.append(minoInit(t_piece_color, true));
+                try pieces.append(Mino{ .color = t_piece_color });
+                try pieces.append(Mino{ .color = t_piece_color });
+                try pieces.append(Mino{ .color = t_piece_color });
                 try pieces.append(null);
             },
             .s => {
                 pivot.* = GridPos{ .x = 1, .y = 1 };
                 try pieces.append(null);
-                try pieces.append(minoInit(s_piece_color, true));
-                try pieces.append(minoInit(s_piece_color, true));
+                try pieces.append(Mino{ .color = s_piece_color });
+                try pieces.append(Mino{ .color = s_piece_color });
                 try pieces.append(null);
-                try pieces.append(minoInit(s_piece_color, true));
-                try pieces.append(minoInit(s_piece_color, true));
+                try pieces.append(Mino{ .color = s_piece_color });
+                try pieces.append(Mino{ .color = s_piece_color });
                 try pieces.append(null);
                 try pieces.append(null);
             },
             .z => {
                 pivot.* = GridPos{ .x = 1, .y = 1 };
-                try pieces.append(minoInit(z_piece_color, true));
-                try pieces.append(minoInit(z_piece_color, true));
+                try pieces.append(Mino{ .color = z_piece_color });
+                try pieces.append(Mino{ .color = z_piece_color });
                 try pieces.append(null);
                 try pieces.append(null);
                 try pieces.append(null);
-                try pieces.append(minoInit(z_piece_color, true));
-                try pieces.append(minoInit(z_piece_color, true));
+                try pieces.append(Mino{ .color = z_piece_color });
+                try pieces.append(Mino{ .color = z_piece_color });
                 try pieces.append(null);
             },
         }
         return pieces;
     }
 };
-
-fn minoInit(color: rl.Color, is_dynamic: bool) ?Mino {
-    return Mino{
-        .color = color,
-        .is_dynamic = is_dynamic,
-    };
-}
 
 pub fn main() !void {
     rl.initWindow(screen_width, screen_height, window_title);
