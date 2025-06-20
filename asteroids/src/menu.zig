@@ -1,4 +1,5 @@
 const Sound = @import("sound.zig");
+const Game = @import("game.zig").Game;
 const Resolution = @import("resolution.zig").Resolution;
 const max_resolutions = @import("resolution.zig").max_resolutions;
 
@@ -142,26 +143,85 @@ pub fn updateOptionsMenu(g:*Game) void
     {
         // Play selection sound
         if (g.settings.sound_enabled) {
-            // TODO
-            rl.playGameSound(g.soundManager, SOUND_MENU_SELECT);
+            Sound.playGameSound(g.sound_manager, .menu_select);
         }
         
-        if (g.selected_option == MENU_BACK)
+        if (g.selected_option == menu_back)
         {
-            g.state = MAIN_MENU;
-            g.selected_option = MENU_OPTIONS;
+            g.state = .main_menu;
+            g.selected_option = .menu_options;
         }
     }
 
     // Going back using ESC keys
-    if (IsKeyPressed(KEY_ESCAPE))
+    if (rl.isKeyPressed(.escape))
     {
         // Play selection sound
-        if (g.soundManager != NULL && g.settings.soundEnabled) {
-            PlayGameSound(g.soundManager, SOUND_MENU_SELECT);
+        if (g.settings.sound_enabled) {
+            Sound.playGameSound(g.sound_manager, .menu_select);
         }
         
-        g.state = MAIN_MENU;
-        g.selected_option = MENU_OPTIONS;
+        g.state = main_menu;
+        g.selected_option = .menu_options;
+    }
+
+pub fn updateControlsMenu(g :*Game) void
+{
+    // Only need to handle back action
+    if (rl.isKeyPressed(.enter) or rl.isKeyPressed(.escape))
+    {
+        // Play selection sound
+        if (g.settings.sound_enabled) {
+            Sound.playGameSound(g.sound_manager, .menu_select);
+        }
+        
+        game->state = .main_menu;
+        game->selected_option = menu_controls;           // usually is always selected at main menu controls
+    }
+}
+
+void updatePauseMenu(g: *Game)
+{
+    // We only need two options
+    var menu_changed = false;
+    
+    if (rl.isKeyPressed(.down) or rl.isKeyPressed(.up))
+    {
+        g.selected_option = !g.selected_option;               // toggle between 0 and 1
+        menu_changed = true;
+    }
+
+    // Play sound on menu navigation
+    if (menu_changed and g.settings.sound_enabled) {
+        Sound.playGameSound(g.sound_manager, .menu_select);
+    }
+
+    if (rl.isKeyPressed(.enter))
+    {
+        // Play selection sound
+        if (g.settings.sound_enabled) {
+            Sound.playGameSound(g.sound_manager, .menu_select);
+        }
+        
+        if (g.selected_option == 0)
+        {
+            // Resume
+            g.state = .gameplay;
+        }
+        else 
+        {
+            g.state = main_menu;
+            g.selected_option = 0;
+        }
+    }
+
+    if (rl.isKeyPressed(.escape) or rl.isKeyPressed(.p))
+    {
+        // Play selection sound
+        if ( g.settings.sound_enabled) {
+            Sound.playGameSound(g.sound_manager, .menu_select);
+        }
+        
+        g.state = .gameplay;
     }
 }

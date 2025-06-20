@@ -10,6 +10,8 @@ const max_stars = @import("stars.zig").max_stars;
 const Resolution = @import("resolution.zig").Resolution;
 const max_resolutions = @import("resolution.zig").max_resolutions;
 
+const menu = @import("menu.zig");
+
 const rl = @import("raylib");
 
 // Game states
@@ -46,11 +48,13 @@ pub const Game = struct {
     resolutions: [max_resolutions]Resolution,
     default_screen_width: i32,
     default_screen_height: i32,
-    current_screen_width: i32,
-    current_screen_height: i32,
     sound_manager: *Sound.Manager, // Added sound manager pointer
 
     pub fn init(g: *Game, sound_manager: *Sound.Manager) void {
+        // init global variables
+        globals.current_screen_width = config.screen_width;
+        globals.current_screen_height = config.screen_height;
+
         // dereferencing the pointer and using -> syntax in this case
         g.state = .main_menu; // we initially set this to the MENU part of the game
         g.score = 0; // we then set the score to be equal to 0 for its own sake of the game
@@ -63,8 +67,6 @@ pub const Game = struct {
         g.settings.music_enabled = true;
         g.settings.show_fps = false;
         g.settings.difficulty = 1;
-        g.current_screen_width = config.screen_width;
-        g.current_screen_height = config.screen_height;
 
         Player.init(&g.player); // initialize the player
 
@@ -130,78 +132,75 @@ pub fn UpdateGame(g :*Game) void
     switch (g.state)
     {
         .main_menu => {
-            updateMainMenu(g);
+            menu.updateMainMenu(g);
             updateStars(g.stars);
         },
 
         .options_menu => {
-            // TODO
-            updateOptionsMenu(g);
+            menu.updateOptionsMenu(g);
             updateStars(g.stars);
         },
 
-        case CONTROLS_MENU:
-            UpdateControlsMenu(game);
+        .controls_menu => {
+            menu.updateControlsMenu(g);
+            updateStars(g.stars);
+        },
+        .paused => {
+            updatePauseMenu(g);
+        },
+        .gameplay => {
+            // Add braces to create a new scope for local variables
+            // Store previous thrusting state to detect changes
+            const was_thrusting_before = g.player.is_thrusting;
+            const previous_shoot_cooldown = g.player.shoot_cooldown;
+
+            Player.updatePlayer(&g.player, g.bullets); 
+
+            // Play thrust sound if player just started thrusting
+            if (!was_thrusting_before && g.player.is_thrusting) {
+                if (g.settings.sound_enabled) {
+                    Sound.playGameSound(g.sound_manager, .thrust);
+                }
+            }
+
+            // Play shooting sound
+            if (previous_shoot_cooldown == 0 and g.player.shoot_cooldown > 0) {
+                if (g.settings.sound_enabled) {
+                    Sound.playGameSound(g.sound_manager, .shoot);
+                }
+            }
+
+            // TODO
+            UpdateAsteroid(g.asteroids);
+            UpdateBullets(g.bullets);
             UpdateStars(g.stars);
-            break;
 
-        case PAUSED:
-            UpdatePauseMenu(game);
-            break;
+            // We check the collisions - added sound support for collisions
+            GameState previousState = g.state;
+            int previousScore = g.score;
 
-        case GAMEPLAY:
-            {  // Add braces to create a new scope for local variables
-                // Store previous thrusting state to detect changes
-                bool wasThrustingBefore = g.player.isThrusting;
-                int previousShootCooldown = g.player.shootCooldown;
-                
-                UpdatePlayer(&g.player, g.bullets); 
-                
-                // Play thrust sound if player just started thrusting
-                if (!wasThrustingBefore && g.player.isThrusting) {
-                    if (g.soundManager != NULL && g.settings.soundEnabled) {
-                        PlayGameSound(g.soundManager, SOUND_THRUST);
-                    }
-                }
-                
-                // Play shooting sound
-                if (previousShootCooldown == 0 && g.player.shootCooldown > 0) {
-                    if (g.soundManager != NULL && g.settings.soundEnabled) {
-                        PlayGameSound(g.soundManager, SOUND_SHOOT);
-                    }
-                }
-                
-                UpdateAsteroid(g.asteroids);
-                UpdateBullets(g.bullets);
-                UpdateStars(g.stars);
+            checkCollisions(&g.player, g.asteroids, g.bullets, &g.score, &g.state);
 
-                // We check the collisions - added sound support for collisions
-                GameState previousState = g.state;
-                int previousScore = g.score;
-                
-                checkCollisions(&g.player, g.asteroids, g.bullets, &g.score, &g.state);
-                
-                // If score changed, an asteroid was hit
-                if (g.score > previousScore) {
-                    if (g.soundManager != NULL && g.settings.soundEnabled) {
-                        // Choose between small and large explosion sound randomly
-                        if (GetRandomValue(0, 1) == 0) {
-                            PlayGameSound(g.soundManager, SOUND_EXPLOSION_SMALL);
-                        } else {
-                            PlayGameSound(g.soundManager, SOUND_EXPLOSION_BIG);
-                        }
-                    }
-                }
-                
-                // If state changed to GAME_OVER, player collided with asteroid
-                if (previousState != GAME_OVER && g.state == GAME_OVER) {
-                    if (g.soundManager != NULL && g.settings.soundEnabled) {
+            // If score changed, an asteroid was hit
+            if (g.score > previousScore) {
+                if (g.soundManager != NULL && g.settings.soundEnabled) {
+                    // Choose between small and large explosion sound randomly
+                    if (GetRandomValue(0, 1) == 0) {
+                        PlayGameSound(g.soundManager, SOUND_EXPLOSION_SMALL);
+                    } else {
                         PlayGameSound(g.soundManager, SOUND_EXPLOSION_BIG);
-                        PlayGameSound(g.soundManager, SOUND_GAME_OVER);
                     }
                 }
             }
-            break;
+
+            // If state changed to GAME_OVER, player collided with asteroid
+            if (previousState != GAME_OVER && g.state == GAME_OVER) {
+                if (g.soundManager != NULL && g.settings.soundEnabled) {
+                    PlayGameSound(g.soundManager, SOUND_EXPLOSION_BIG);
+                    PlayGameSound(g.soundManager, SOUND_GAME_OVER);
+                }
+            }
+        },
 
         case GAME_OVER:
             // Check for the high score

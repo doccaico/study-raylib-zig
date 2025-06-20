@@ -184,14 +184,14 @@ pub const Manager = struct {
         }
     }
 
-    pub fn updateGameMusic(s: *SoundManager, g: *Game) void {
+    pub fn updateGameMusic(m: *Manager, g: *Game) void {
         // Only update music if it was loaded successfully
-        if (!s.music_loaded) return;
+        if (!m.music_loaded) return;
 
         // Update music stream, required to play music
-        rl.updateMusicStream(s.menu_music);
-        if (s.game_music.ctxData != s.menu_music.ctxData) {
-            rl.updateMusicStream(s.game_music);
+        rl.updateMusicStream(m.menu_music);
+        if (m.game_music.ctxData != m.menu_music.ctxData) {
+            rl.updateMusicStream(m.game_music);
         }
 
         const S = struct {
@@ -203,22 +203,30 @@ pub const Manager = struct {
         // Switch between menu and game music based on game state
         if (g.state == .gameplay) {
             // If in gameplay, stop menu music and play game music if it's not already playing
-            if (rl.isMusicStreamPlaying(s.menu_music)) {
-                rl.stopMusicStream(s.menu_music);
+            if (rl.isMusicStreamPlaying(m.menu_music)) {
+                rl.stopMusicStream(m.menu_music);
             }
 
-            if (!rl.isMusicStreamPlaying(s.game_music) and g.settings.music_enabled) {
-                rl.playMusicStream(s.game_music);
+            if (!rl.isMusicStreamPlaying(m.game_music) and g.settingm.music_enabled) {
+                rl.playMusicStream(m.game_music);
             }
         } else if (g.state != .paused) { // Don't change music when paused
             // If in menu, stop game music and play menu music if it's not already playing
-            if (rl.isMusicStreamPlaying(s.game_music)) {
-                rl.stopMusicStream(s.game_music);
+            if (rl.isMusicStreamPlaying(m.game_music)) {
+                rl.stopMusicStream(m.game_music);
             }
 
-            if (!rl.isMusicStreamPlaying(s.menu_music) and g.settings.music_enabled) {
-                rl.playMusicStream(s.menu_music);
+            if (!rl.isMusicStreamPlaying(m.menu_music) and g.settingm.music_enabled) {
+                rl.playMusicStream(m.menu_music);
             }
         }
     }
+
+pub fn playGameSound(m:*Manager, sound_type: Sound) void
+{
+    // Only play if the sound was loaded successfully and sound is enabled
+    if (m->sound_loaded[@intFromEnum(sound_type)]) {
+        rl.playSound(m->sounds[@intFromEnum(sound_type)]);
+    }
+}
 };
