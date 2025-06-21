@@ -10,7 +10,7 @@ const Bullet = @import("bullet.zig");
 const max_bullets = Bullet.max_bullets;
 const Star = @import("star.zig");
 const max_stars = Star.max_stars;
-const Resolution = @import("resolution.zig").Resolution;
+const Resolution = @import("resolution.zig");
 const max_resolutions = Resolution.max_resolutions;
 
 const rl = @import("raylib");
@@ -91,7 +91,7 @@ pub fn init(g: *Game, sound_manager: *Sound.Manager) void {
     }
 }
 
-pub fn update(g: *Game) void {
+pub fn update(g: *Game) bool {
     // Update music
     Sound.updateGameMusic(g.sound_manager, g);
 
@@ -99,7 +99,7 @@ pub fn update(g: *Game) void {
     if (rl.windowShouldClose()) {
         // This is the exit process triggered by the window X button
         // You may want to add confirmation here
-        return;
+        return false;
     }
 
     // Handle pausing during game_play - ONLY pause, don't exit
@@ -110,7 +110,7 @@ pub fn update(g: *Game) void {
         // Pause music when game is paused
         Sound.pauseGameMusic(g.sound_manager);
 
-        return;
+        return true;
     }
 
     // Handle ESC during game_play to return to main menu
@@ -123,13 +123,15 @@ pub fn update(g: *Game) void {
             Sound.playGameSound(g.sound_manager, .menu_select);
         }
 
-        return;
+        return true;
     }
 
     // Handle different game states
     switch (g.state) {
         .main_menu => {
-            Menu.updateMainMenu(g);
+            if (!Menu.updateMainMenu(g)) {
+                return false;
+            }
             Star.update(&g.stars);
         },
 
@@ -229,6 +231,8 @@ pub fn update(g: *Game) void {
             Star.update(&g.stars);
         },
     }
+
+    return true;
 }
 
 // Implementing the reset game feature
@@ -245,4 +249,50 @@ fn resetGame(g: *Game) void {
     }
     // reset the score finally
     g.score = 0;
+}
+
+pub fn draw(g: *Game) void {
+    // Always draw stars first for all states
+    Star.draw(g.stars);
+
+    // TODO
+    switch (g.state) {
+        .main_menu => Menu.drawMainMenu(g),
+        .options_menu => Menu.drawOptionsMenu(g),
+        .controls_menu => Menu.drawControlsMenu(),
+        else => {},
+        // case GAMEPLAY:
+        //     // Original gameplay drawing code
+        //     DrawAsteroids(game->asteroids);
+        //     DrawBullets(game->bullets);
+        //     DrawPlayer(game->player);
+        //
+        //     // For drawing the score on the screen
+        //     DrawText(TextFormat("SCORE: %d", game->score), 10, 10, 20, WHITE);
+        //     break;
+        //
+        // case PAUSED:
+        //     // We need to make sure we Draw the game in the background
+        //     DrawAsteroids(game->asteroids);
+        //     DrawBullets(game->bullets);
+        //     DrawPlayer(game->player);
+        //
+        //     // Then draw the pause menu overlay
+        //     DrawPauseMenu(game);
+        //     break;
+        //
+        // case GAME_OVER:
+        //     // Draw game over text
+        //     DrawTextCenteredX("GAME OVER", screenHeight / 2 - 40, 40, WHITE);
+        //     DrawTextCenteredX(TextFormat("FINAL SCORE: %d", game->score), screenHeight / 2, 20, WHITE);
+        //     DrawTextCenteredX("Press ENTER to play again", screenHeight / 2 + 40, 20, WHITE);
+        //     DrawTextCenteredX("Press ESC to return to menu", screenHeight / 2 + 70, 20, WHITE);
+        //     break;
+    }
+    //
+    // // FIXED: Adding fps options enabled - properly use DrawFPS
+    // if (game->settings.showFPS)
+    // {
+    //     DrawFPS(10, screenHeight - 30);
+    // }
 }

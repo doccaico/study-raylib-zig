@@ -1,27 +1,27 @@
 // const builtin = @import("builtin");
 const std = @import("std");
-const config = @import("config.zig");
+const Config = @import("config.zig");
 const Sound = @import("sound.zig");
 const Game = @import("game.zig");
-const Resolution = @import("resolution.zig").Resolution;
+const Resolution = @import("resolution.zig");
 
 const rl = @import("raylib");
 
 // Global screen dimensions
-// var screen_width: i32 = config.screen_width;
-// var screen_height: i32 = config.screen_height;
+// var screen_width: i32 = Config.screen_width;
+// var screen_height: i32 = Config.screen_height;
 
 pub fn main() !void {
-    rl.initWindow(config.screen_width, config.screen_height, config.window_title);
-    defer rl.closeWindow();
+    rl.initWindow(Config.screen_width, Config.screen_height, Config.window_title);
+    // defer rl.closeWindow();
 
     // Enable vsync
     rl.setWindowState(.{ .vsync_hint = true });
 
-    rl.setTargetFPS(config.fps);
+    rl.setTargetFPS(Config.fps);
 
     // Disable default exit key (escape)
-    // rl.setExitKey(.null);
+    rl.setExitKey(.null);
 
     // Initialize the sound system
     var sound_manager: Sound.Manager = undefined;
@@ -55,11 +55,17 @@ pub fn main() !void {
             Resolution.toggleFullscreenMode(&g);
         }
 
-        Game.update(&g);
+        // Game.update(&g);
+        if (!Game.update(&g)) {
+            break;
+        }
 
         rl.beginDrawing();
         defer rl.endDrawing();
-
         rl.clearBackground(.black);
+
+        Game.draw(&g);
     }
+
+    rl.closeWindow();
 }

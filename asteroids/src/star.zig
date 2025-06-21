@@ -49,3 +49,13 @@ pub fn update(s: *[max_stars]Star) void {
         // Optional adding the paralax effect with layers
     }
 }
+
+pub fn draw(s: [max_stars]Star) void {
+    for (0..max_stars) |i| {
+        if (s[i].size == 1) {
+            rl.drawPixelV(s[i].position, s[i].color);
+        } else {
+            rl.drawCircleV(s[i].position, @as(f32, @floatFromInt(s[i].size)) * 0.5, s[i].color);
+        }
+    }
+}
