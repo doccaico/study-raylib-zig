@@ -1,4 +1,4 @@
-const Global = @import("global.zig");
+const global = @import("global.zig");
 const Player = @import("Player.zig");
 const Game = @import("Game.zig");
 const Asteroid = @import("Asteroid.zig");
@@ -9,16 +9,16 @@ const max_bullets = Bullet.max_bullets;
 const rl = @import("raylib");
 
 pub fn wrapPosition(position: *rl.Vector2) void {
-    if (position.x > @as(f32, @floatFromInt(Global.current_screen_width))) {
+    if (position.x > @as(f32, @floatFromInt(global.current_screen_width))) {
         position.x = 0;
     } else if (position.x < 0) {
-        position.x = @as(f32, @floatFromInt(Global.current_screen_width));
+        position.x = @as(f32, @floatFromInt(global.current_screen_width));
     }
 
-    if (position.y > @as(f32, @floatFromInt(Global.current_screen_height))) {
+    if (position.y > @as(f32, @floatFromInt(global.current_screen_height))) {
         position.y = 0;
     } else if (position.y < 0) {
-        position.y = @as(f32, @floatFromInt(Global.current_screen_height));
+        position.y = @as(f32, @floatFromInt(global.current_screen_height));
     }
 }
 
@@ -68,4 +68,9 @@ fn checkCollisionCircles(center1: rl.Vector2, radius1: f32, center2: rl.Vector2,
     const distance = @sqrt(dx * dx + dy * dy);
 
     return distance <= radius1 + radius2;
+}
+
+pub fn drawTextCenteredX(text: [:0]const u8, y: i32, font_size: i32, color: rl.Color) void {
+    const text_width = rl.measureText(text, font_size);
+    rl.drawText(text, @divTrunc(global.current_screen_width, 2) - @divTrunc(text_width, 2), y, font_size, color);
 }

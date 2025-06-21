@@ -169,3 +169,43 @@ fn updatePlayerMouse(self: *Self, bullets: *[max_bullets]Bullet) void {
         self.shoot_cooldown = bullet_cooldown;
     }
 }
+
+pub fn draw(self: Self) void {
+    const cos_a = @cos(self.rotation * std.math.rad_per_deg);
+    const sin_a = @sin(self.rotation * std.math.rad_per_deg);
+
+    // Draw the ship triangle
+    var v1: rl.Vector2 = undefined;
+    var v2: rl.Vector2 = undefined;
+    var v3: rl.Vector2 = undefined;
+
+    v1.x = self.position.x + cos_a * ship_size;
+    v1.y = self.position.y + sin_a * ship_size;
+
+    v2.x = self.position.x + @cos(self.rotation * std.math.rad_per_deg + 2.5) * ship_size * 0.7;
+    v2.y = self.position.y + @sin(self.rotation * std.math.rad_per_deg + 2.5) * ship_size * 0.7;
+
+    v3.x = self.position.x + @cos(self.rotation * std.math.rad_per_deg - 2.5) * ship_size * 0.7;
+    v3.y = self.position.y + @sin(self.rotation * std.math.rad_per_deg - 2.5) * ship_size * 0.7;
+
+    rl.drawTriangleLines(v1, v2, v3, .white);
+
+    // Draw the thrust flame with animated size for visual feedback
+    if (self.is_thrusting) {
+        var thrust_pos: rl.Vector2 = undefined;
+        thrust_pos.x = self.position.x - cos_a * ship_size * 0.5;
+        thrust_pos.y = self.position.y - sin_a * ship_size * 0.5;
+
+        // Animated flame length
+        const flame_length = @as(f32, @floatFromInt(ship_size * rl.getRandomValue(5, 15))) / 10.0;
+
+        rl.drawLineEx(thrust_pos, rl.Vector2.init(thrust_pos.x - cos_a * flame_length, thrust_pos.y - sin_a * flame_length), 3.0, .yellow);
+
+        // Add a second, shorter flame line for visual effect
+        rl.drawLineEx(thrust_pos, rl.Vector2.init(thrust_pos.x - cos_a * flame_length * 0.7 + sin_a * 3.0, thrust_pos.y - sin_a * flame_length * 0.7 - cos_a * 3.0), 2.0, .red);
+    }
+
+    // Indicate control mode with a small indicator
+    const s = if (self.control_mode == .keyboard) "K" else "M";
+    rl.drawText(s, @as(i32, @intFromFloat(self.position.x)) - 5, @as(i32, @intFromFloat(self.position.y)) - ship_size - 10, 10, .gray);
+}

@@ -1,6 +1,6 @@
 const std = @import("std");
 const Sound = @import("Sound.zig");
-const Global = @import("global.zig");
+const global = @import("global.zig");
 const Game = @import("Game.zig");
 const Resolution = @import("Resolution.zig");
 const max_resolutions = Resolution.max_resolutions;
@@ -211,7 +211,7 @@ pub fn updatePauseMenu(game: *Game) void {
 }
 
 fn drawMenuTitle(title: [:0]const u8) void {
-    rl.drawText(title, @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText(title, 40), 2), @divTrunc(Global.current_screen_height, 6), 40, .white);
+    rl.drawText(title, @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText(title, 40), 2), @divTrunc(global.current_screen_height, 6), 40, .white);
 }
 
 fn drawMenuOption(text: [:0]const u8, y: i32, selected: bool) void {
@@ -221,10 +221,10 @@ fn drawMenuOption(text: [:0]const u8, y: i32, selected: bool) void {
     const font_size: i32 = if (selected) 25 else 20;
 
     if (selected) {
-        rl.drawText(">", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText(text, font_size), 2) - 30, y, font_size, .yellow);
+        rl.drawText(">", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText(text, font_size), 2) - 30, y, font_size, .yellow);
     }
 
-    rl.drawText(text, @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText(text, font_size), 2), y, font_size, color);
+    rl.drawText(text, @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText(text, font_size), 2), y, font_size, color);
 }
 
 pub fn drawMainMenu(game: *Game) void {
@@ -232,7 +232,7 @@ pub fn drawMainMenu(game: *Game) void {
     drawMenuTitle("ASTEROIDS");
 
     // Menu Options
-    const start_y = @divTrunc(Global.current_screen_height, 2) - 40;
+    const start_y = @divTrunc(global.current_screen_height, 2) - 40;
     const spacing = 50; // for adding space in the menu
     // TODO
     drawMenuOption("START GAME", start_y, game.selected_option == menu_start);
@@ -241,18 +241,18 @@ pub fn drawMainMenu(game: *Game) void {
     drawMenuOption("EXIT", start_y + spacing * 3, game.selected_option == menu_exit);
 
     // Footer - FIXED positioning
-    rl.drawText("© 2025 Karlo Siric", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("© 2025 Karlo Siric", 15), 2), Global.current_screen_height - 30, 15, .gray);
+    rl.drawText("© 2025 Karlo Siric", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("© 2025 Karlo Siric", 15), 2), global.current_screen_height - 30, 15, .gray);
 
     // Showing high score if it exists - FIXED positioning
     if (game.high_score > 0) {
-        rl.drawText(rl.textFormat("HIGH SCORE: %d", .{game.high_score}), @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText(rl.textFormat("HIGH SCORE: %d", .{game.high_score}), 20), 2), Global.current_screen_height - 60, 20, .yellow);
+        rl.drawText(rl.textFormat("HIGH SCORE: %d", .{game.high_score}), @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText(rl.textFormat("HIGH SCORE: %d", .{game.high_score}), 20), 2), global.current_screen_height - 60, 20, .yellow);
     }
 }
 
 pub fn drawOptionsMenu(game: *Game) void {
     drawMenuTitle("OPTIONS");
 
-    const start_y = @divTrunc(Global.current_screen_height, 2) - 60;
+    const start_y = @divTrunc(global.current_screen_height, 2) - 60;
     const spacing = 50;
 
     var sound_text: [20:0]u8 = undefined;
@@ -306,61 +306,115 @@ pub fn drawOptionsMenu(game: *Game) void {
     drawMenuOption("BACK", start_y + spacing * 6, game.selected_option == menu_back);
 
     // Instructions in the menu
-    rl.drawText("<- -> to change settings", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("<- -> to change settings", 15), 2), Global.current_screen_height - 30, 15, .gray);
+    rl.drawText("<- -> to change settings", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("<- -> to change settings", 15), 2), global.current_screen_height - 30, 15, .gray);
 }
 
 pub fn drawControlsMenu() void {
     drawMenuTitle("CONTROLS");
 
     // Start higher to fit more controls
-    const start_y = @divTrunc(Global.current_screen_height, 2) - 150;
+    const start_y = @divTrunc(global.current_screen_height, 2) - 150;
     // Reduced spacing to fit more items
     const spacing = 30;
 
     var current_y = start_y;
 
     // Keyboard controls section
-    rl.drawText("KEYBOARD CONTROLS:", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("KEYBOARD CONTROLS:", 22), 2), current_y, 22, .yellow);
+    rl.drawText("KEYBOARD CONTROLS:", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("KEYBOARD CONTROLS:", 22), 2), current_y, 22, .yellow);
     current_y += spacing + 10;
 
-    rl.drawText("UP / W - Thrust", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("UP / W - Thrust", 20), 2), current_y, 20, .white);
+    rl.drawText("UP / W - Thrust", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("UP / W - Thrust", 20), 2), current_y, 20, .white);
     current_y += spacing;
 
-    rl.drawText("LEFT / A - Rotate Left", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("LEFT / A - Rotate Left", 20), 2), current_y, 20, .white);
+    rl.drawText("LEFT / A - Rotate Left", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("LEFT / A - Rotate Left", 20), 2), current_y, 20, .white);
     current_y += spacing;
 
-    rl.drawText("RIGHT / D - Rotate Right", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("RIGHT / D - Rotate Right", 20), 2), current_y, 20, .white);
+    rl.drawText("RIGHT / D - Rotate Right", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("RIGHT / D - Rotate Right", 20), 2), current_y, 20, .white);
     current_y += spacing;
 
-    rl.drawText("SPACE - Fire", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("SPACE - Fire", 20), 2), current_y, 20, .white);
+    rl.drawText("SPACE - Fire", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("SPACE - Fire", 20), 2), current_y, 20, .white);
     current_y += spacing + 20;
 
     // Mouse controls section
-    rl.drawText("MOUSE CONTROLS:", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("MOUSE CONTROLS:", 22), 2), current_y, 22, .yellow);
+    rl.drawText("MOUSE CONTROLS:", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("MOUSE CONTROLS:", 22), 2), current_y, 22, .yellow);
     current_y += spacing + 10;
 
-    rl.drawText("MOUSE POSITION - Aim Ship", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("MOUSE POSITION - Aim Ship", 20), 2), current_y, 20, .white);
+    rl.drawText("MOUSE POSITION - Aim Ship", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("MOUSE POSITION - Aim Ship", 20), 2), current_y, 20, .white);
     current_y += spacing;
 
-    rl.drawText("LEFT CLICK - Fire", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("LEFT CLICK - Fire", 20), 2), current_y, 20, .white);
+    rl.drawText("LEFT CLICK - Fire", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("LEFT CLICK - Fire", 20), 2), current_y, 20, .white);
     current_y += spacing;
 
-    rl.drawText("RIGHT CLICK - Thrust", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("RIGHT CLICK - Thrust", 20), 2), current_y, 20, .white);
+    rl.drawText("RIGHT CLICK - Thrust", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("RIGHT CLICK - Thrust", 20), 2), current_y, 20, .white);
     current_y += spacing;
 
-    rl.drawText("M - Switch Control Mode", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("M - Switch Control Mode", 20), 2), current_y, 20, .white);
+    rl.drawText("M - Switch Control Mode", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("M - Switch Control Mode", 20), 2), current_y, 20, .white);
     current_y += spacing + 20;
 
     // General controls
-    rl.drawText("P - Pause Game", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("P - Pause Game", 20), 2), current_y, 20, .white);
+    rl.drawText("P - Pause Game", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("P - Pause Game", 20), 2), current_y, 20, .white);
     current_y += spacing;
 
-    rl.drawText("ESC - Return to Menu", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("ESC - Return to Menu", 20), 2), current_y, 20, .white);
+    rl.drawText("ESC - Return to Menu", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("ESC - Return to Menu", 20), 2), current_y, 20, .white);
     current_y += spacing + 10;
 
     // back button
     drawMenuOption("BACK", current_y, true);
 
     // Instructions for the menu
-    rl.drawText("Press ENTER or ESC to return", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("Press ENTER or ESC to return", 15), 2), Global.current_screen_height - 30, 15, .gray);
+    rl.drawText("Press ENTER or ESC to return", @divTrunc(global.current_screen_width, 2) - @divTrunc(rl.measureText("Press ENTER or ESC to return", 15), 2), global.current_screen_height - 30, 15, .gray);
+}
+
+pub fn drawPauseMenu(game: *Game) void {
+    // Semi-transparent overlay
+    rl.drawRectangle(0, 0, global.current_screen_width, global.current_screen_height, rl.Color.init(0, 0, 0, 150));
+
+    // Draw the title
+    const title_text = "PAUSED";
+    const title_font_size = 40;
+    const title_width = rl.measureText(title_text, title_font_size);
+    const title_x = @divTrunc(global.current_screen_width, 2) - @divTrunc(title_width, 2);
+    const title_y = @divTrunc(global.current_screen_height, 6);
+    rl.drawText(title_text, title_x, title_y, title_font_size, .white);
+
+    // Menu options
+    const start_y = @divTrunc(global.current_screen_height, 2) - 40;
+    const spacing = 50;
+
+    // Draw RESUME option
+    const resume_text = "RESUME";
+    var option_font_size: i32 = if (game.selected_option == 0) 25 else 20;
+    var option_color: rl.Color = if (game.selected_option == 0) .yellow else .white;
+    const resume_width = rl.measureText(resume_text, option_font_size);
+    const resume_x = @divTrunc(global.current_screen_width, 2) - @divTrunc(resume_width, 2);
+
+    // Draw selector if this option is selected
+    if (game.selected_option == 0) {
+        rl.drawText(">", resume_x - 30, start_y, option_font_size, .yellow);
+    }
+
+    rl.drawText(resume_text, resume_x, start_y, option_font_size, option_color);
+
+    // Draw RETURN TO MENU option
+    const return_text = "RETURN TO MENU";
+    option_font_size = if (game.selected_option == 1) 25 else 20;
+    option_color = if (game.selected_option == 1) .yellow else .white;
+    const return_width = rl.measureText(return_text, option_font_size);
+    const return_x = @divTrunc(global.current_screen_width, 2) - @divTrunc(return_width, 2);
+
+    // Draw selector if this option is selected
+    if (game.selected_option == 1) {
+        rl.drawText(">", return_x - 30, start_y + spacing, option_font_size, .yellow);
+    }
+
+    rl.drawText(return_text, return_x, start_y + spacing, option_font_size, option_color);
+
+    // Draw score text
+    const score_text = rl.textFormat("SCORE: %d", .{game.score});
+    const score_font_size = 20;
+    const score_width = rl.measureText(score_text, score_font_size);
+    const score_x = @divTrunc(global.current_screen_width, 2) - @divTrunc(score_width, 2);
+    const score_y = global.current_screen_height - 60;
+
+    rl.drawText(score_text, score_x, score_y, score_font_size, .yellow);
 }

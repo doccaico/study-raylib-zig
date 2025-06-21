@@ -167,11 +167,9 @@ pub fn update(self: *Self) bool {
                 }
             }
 
-            // TODO 後でやる
-            // UpdateAsteroid(self.asteroids);
-            // UpdateBullets(self.bullets);
-            // UpdateStars(self.stars);
-            //
+            Asteroid.update(&self.asteroids);
+            Bullet.update(&self.bullets);
+            Star.update(&self.stars);
 
             // We check the collisions - added sound support for collisions
             const previous_state = self.state;
@@ -253,44 +251,38 @@ pub fn draw(self: *Self) void {
     // Always draw stars first for all states
     Star.draw(self.stars);
 
-    // TODO
     switch (self.state) {
         .main_menu => menu.drawMainMenu(self),
         .options_menu => menu.drawOptionsMenu(self),
         .controls_menu => menu.drawControlsMenu(),
-        else => {},
-        // case GAMEPLAY:
-        //     // Original gameplay drawing code
-        //     DrawAsteroids(game->asteroids);
-        //     DrawBullets(game->bullets);
-        //     DrawPlayer(game->player);
-        //
-        //     // For drawing the score on the screen
-        //     DrawText(TextFormat("SCORE: %d", game->score), 10, 10, 20, WHITE);
-        //     break;
-        //
-        // case PAUSED:
-        //     // We need to make sure we Draw the game in the background
-        //     DrawAsteroids(game->asteroids);
-        //     DrawBullets(game->bullets);
-        //     DrawPlayer(game->player);
-        //
-        //     // Then draw the pause menu overlay
-        //     DrawPausemenu(game);
-        //     break;
-        //
-        // case GAME_OVER:
-        //     // Draw game over text
-        //     DrawTextCenteredX("GAME OVER", screenHeight / 2 - 40, 40, WHITE);
-        //     DrawTextCenteredX(TextFormat("FINAL SCORE: %d", game->score), screenHeight / 2, 20, WHITE);
-        //     DrawTextCenteredX("Press ENTER to play again", screenHeight / 2 + 40, 20, WHITE);
-        //     DrawTextCenteredX("Press ESC to return to menu", screenHeight / 2 + 70, 20, WHITE);
-        //     break;
+        .game_play => {
+            // Original gameplay drawing code
+            Asteroid.draw(&self.asteroids);
+            Bullet.draw(&self.bullets);
+            Player.draw(self.player);
+            // For drawing the score on the screen
+            rl.drawText(rl.textFormat("SCORE: %d", .{self.score}), 10, 10, 20, .white);
+        },
+        .paused => {
+            // We need to make sure we Draw the game in the background
+            Asteroid.draw(&self.asteroids);
+            Bullet.draw(&self.bullets);
+            Player.draw(self.player);
+            // Then draw the pause menu overlay
+            menu.drawPauseMenu(self);
+        },
+        .game_over => {
+            // Draw game over text
+            const final_score = rl.textFormat("FINAL SCORE: %d", .{self.score});
+            util.drawTextCenteredX("GAME OVER", @divTrunc(global.current_screen_height, 2) - 40, 40, .white);
+            util.drawTextCenteredX(final_score, @divTrunc(global.current_screen_height, 2), 20, .white);
+            util.drawTextCenteredX("Press ENTER to play again", @divTrunc(global.current_screen_height, 2) + 40, 20, .white);
+            util.drawTextCenteredX("Press ESC to return to menu", @divTrunc(global.current_screen_height, 2) + 70, 20, .white);
+        },
     }
-    //
+
     // // FIXED: Adding fps options enabled - properly use DrawFPS
-    // if (game->settings.showFPS)
-    // {
-    //     DrawFPS(10, screenHeight - 30);
-    // }
+    if (self.settings.show_fps) {
+        rl.drawFPS(10, global.current_screen_height - 30);
+    }
 }
