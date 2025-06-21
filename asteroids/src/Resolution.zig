@@ -10,13 +10,11 @@ width: i32,
 height: i32,
 name: [:0]const u8,
 
-pub const Self = @This();
-
 pub fn init(game: *Game) void {
-    game.resolutions[0] = Self{ .width = 800, .height = 600, .name = "800x600" };
-    game.resolutions[1] = Self{ .width = 1024, .height = 768, .name = "1024x768" };
-    game.resolutions[2] = Self{ .width = 1280, .height = 720, .name = "1280x720 (HD)" };
-    game.resolutions[3] = Self{ .width = 1920, .height = 1080, .name = "1920x1080 (FHD)" };
+    game.resolutions[0] = .{ .width = 800, .height = 600, .name = "800x600" };
+    game.resolutions[1] = .{ .width = 1024, .height = 768, .name = "1024x768" };
+    game.resolutions[2] = .{ .width = 1280, .height = 720, .name = "1280x720 (HD)" };
+    game.resolutions[3] = .{ .width = 1920, .height = 1080, .name = "1920x1080 (FHD)" };
 
     game.current_resolution = 2; // Default to 1280x720
 

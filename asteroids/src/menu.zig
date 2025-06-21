@@ -24,40 +24,40 @@ const menu_fullscreen = 5; // added this new setting for fullscreen game NEW
 const menu_back = 6;
 const menu_options_count = 7;
 
-pub fn updateMainMenu(g: *Game) bool {
+pub fn updateMainMenu(game: *Game) bool {
     // Navigation bar
     var menu_changed = false;
 
     if (rl.isKeyPressed(.down)) {
-        g.selected_option = @mod((g.selected_option + 1), menu_main_count);
+        game.selected_option = @mod((game.selected_option + 1), menu_main_count);
         menu_changed = true;
     } else if (rl.isKeyPressed(.up)) {
         // FIX: Proper handling of wrap-around when going up in menu
-        g.selected_option = @mod((g.selected_option - 1 + menu_main_count), menu_main_count);
+        game.selected_option = @mod((game.selected_option - 1 + menu_main_count), menu_main_count);
         menu_changed = true;
     }
 
     // Play sound on menu navigation
-    if (menu_changed and g.settings.sound_enabled) {
-        Sound.playGameSound(g.sound, .menu_select);
+    if (menu_changed and game.settings.sound_enabled) {
+        Sound.playGameSound(game.sound, .menu_select);
     }
 
     // Selected
     if (rl.isKeyPressed(.enter)) {
         // Play selection sound
-        if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound, .menu_select);
+        if (game.settings.sound_enabled) {
+            Sound.playGameSound(game.sound, .menu_select);
         }
 
-        switch (g.selected_option) {
-            menu_start => g.state = .game_play,
+        switch (game.selected_option) {
+            menu_start => game.state = .game_play,
             menu_options => {
-                g.state = .options_menu;
-                g.selected_option = 0; // need to reset the select for this to start from 0
+                game.state = .options_menu;
+                game.selected_option = 0; // need to reset the select for this to start from 0
             },
             menu_controls => {
-                g.state = .controls_menu;
-                g.selected_option = 0; // need to reset the select option
+                game.state = .controls_menu;
+                game.selected_option = 0; // need to reset the select option
             },
             menu_exit => {
                 return false;
@@ -69,64 +69,64 @@ pub fn updateMainMenu(g: *Game) bool {
     return true;
 }
 
-pub fn updateOptionsMenu(g: *Game) void {
+pub fn updateOptionsMenu(game: *Game) void {
     // Navigation
     var menu_changed = false;
 
     if (rl.isKeyPressed(.down)) {
-        g.selected_option = @mod((g.selected_option + 1), menu_options_count);
+        game.selected_option = @mod((game.selected_option + 1), menu_options_count);
         menu_changed = true;
     } else if (rl.isKeyPressed(.up)) {
-        g.selected_option = @mod((g.selected_option - 1 + menu_options_count), menu_options_count);
+        game.selected_option = @mod((game.selected_option - 1 + menu_options_count), menu_options_count);
         menu_changed = true;
     }
 
     // Play sound on menu navigation
-    if (menu_changed and g.settings.sound_enabled) {
-        Sound.playGameSound(g.sound, .menu_select);
+    if (menu_changed and game.settings.sound_enabled) {
+        Sound.playGameSound(game.sound, .menu_select);
     }
 
     // Change settings with left/right keybinds
     if (rl.isKeyPressed(.right) or rl.isKeyPressed(.left)) {
         // Play selection sound
-        if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound, .menu_select);
+        if (game.settings.sound_enabled) {
+            Sound.playGameSound(game.sound, .menu_select);
         }
 
         // toggle or cycle values
-        switch (g.selected_option) {
+        switch (game.selected_option) {
             menu_sound => {
-                g.settings.sound_enabled = !g.settings.sound_enabled;
+                game.settings.sound_enabled = !game.settings.sound_enabled;
                 // Update sound manager
-                Sound.toggleSoundEnabled(g.sound, g.settings.sound_enabled);
+                Sound.toggleSoundEnabled(game.sound, game.settings.sound_enabled);
             },
             menu_music => {
-                g.settings.music_enabled = !g.settings.music_enabled;
+                game.settings.music_enabled = !game.settings.music_enabled;
                 // Update music manager
-                Sound.toggleMusicEnabled(g.sound, g.settings.music_enabled);
+                Sound.toggleMusicEnabled(game.sound, game.settings.music_enabled);
             },
             menu_fps => {
-                g.settings.show_fps = !g.settings.show_fps;
+                game.settings.show_fps = !game.settings.show_fps;
             },
             menu_resolution => {
                 if (rl.isKeyPressed(.right)) {
                     // Cycle to next resolution
-                    const new_res = @mod((g.current_resolution + 1), max_resolutions);
-                    Resolution.changeResolution(g, @intCast(new_res));
+                    const new_res = @mod((game.current_resolution + 1), max_resolutions);
+                    Resolution.changeResolution(game, @intCast(new_res));
                 } else {
                     // Cycle to previous resolution
-                    const new_res = @mod((g.current_resolution - 1 + max_resolutions), max_resolutions);
-                    Resolution.changeResolution(g, @intCast(new_res));
+                    const new_res = @mod((game.current_resolution - 1 + max_resolutions), max_resolutions);
+                    Resolution.changeResolution(game, @intCast(new_res));
                 }
             },
             menu_fullscreen => {
-                Resolution.toggleFullscreenMode(g);
+                Resolution.toggleFullscreenMode(game);
             },
             menu_difficulty => {
                 if (rl.isKeyPressed(.right)) {
-                    g.settings.difficulty = @mod((g.settings.difficulty + 1), 3);
+                    game.settings.difficulty = @mod((game.settings.difficulty + 1), 3);
                 } else {
-                    g.settings.difficulty = @mod((g.settings.difficulty - 1 + 3), 3);
+                    game.settings.difficulty = @mod((game.settings.difficulty - 1 + 3), 3);
                 }
             },
             else => {},
@@ -135,78 +135,78 @@ pub fn updateOptionsMenu(g: *Game) void {
 
     if (rl.isKeyPressed(.enter)) {
         // Play selection sound
-        if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound, .menu_select);
+        if (game.settings.sound_enabled) {
+            Sound.playGameSound(game.sound, .menu_select);
         }
 
-        if (g.selected_option == menu_back) {
-            g.state = .main_menu;
-            g.selected_option = menu_options;
+        if (game.selected_option == menu_back) {
+            game.state = .main_menu;
+            game.selected_option = menu_options;
         }
     }
 
     // Going back using ESC keys
     if (rl.isKeyPressed(.escape)) {
         // Play selection sound
-        if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound, .menu_select);
+        if (game.settings.sound_enabled) {
+            Sound.playGameSound(game.sound, .menu_select);
         }
 
-        g.state = .main_menu;
-        g.selected_option = menu_options;
+        game.state = .main_menu;
+        game.selected_option = menu_options;
     }
 }
 
-pub fn updateControlsMenu(g: *Game) void {
+pub fn updateControlsMenu(game: *Game) void {
     // Only need to handle back action
     if (rl.isKeyPressed(.enter) or rl.isKeyPressed(.escape)) {
         // Play selection sound
-        if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound, .menu_select);
+        if (game.settings.sound_enabled) {
+            Sound.playGameSound(game.sound, .menu_select);
         }
 
-        g.state = .main_menu;
-        g.selected_option = menu_controls; // usually is always selected at main menu controls
+        game.state = .main_menu;
+        game.selected_option = menu_controls; // usually is always selected at main menu controls
     }
 }
 
-pub fn updatePauseMenu(g: *Game) void {
+pub fn updatePauseMenu(game: *Game) void {
     // We only need two options
     var menu_changed = false;
 
     if (rl.isKeyPressed(.down) or rl.isKeyPressed(.up)) {
-        // g.selected_option = !g.selected_option;
-        g.selected_option = if (g.selected_option == 0) 1 else 0; // toggle between 0 and 1
+        // game.selected_option = !game.selected_option;
+        game.selected_option = if (game.selected_option == 0) 1 else 0; // toggle between 0 and 1
         menu_changed = true;
     }
 
     // Play sound on menu navigation
-    if (menu_changed and g.settings.sound_enabled) {
-        Sound.playGameSound(g.sound, .menu_select);
+    if (menu_changed and game.settings.sound_enabled) {
+        Sound.playGameSound(game.sound, .menu_select);
     }
 
     if (rl.isKeyPressed(.enter)) {
         // Play selection sound
-        if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound, .menu_select);
+        if (game.settings.sound_enabled) {
+            Sound.playGameSound(game.sound, .menu_select);
         }
 
-        if (g.selected_option == 0) {
+        if (game.selected_option == 0) {
             // Resume
-            g.state = .game_play;
+            game.state = .game_play;
         } else {
-            g.state = .main_menu;
-            g.selected_option = 0;
+            game.state = .main_menu;
+            game.selected_option = 0;
         }
     }
 
     if (rl.isKeyPressed(.escape) or rl.isKeyPressed(.p)) {
         // Play selection sound
-        if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound, .menu_select);
+        if (game.settings.sound_enabled) {
+            Sound.playGameSound(game.sound, .menu_select);
         }
 
-        g.state = .game_play;
+        game.state = .game_play;
     }
 }
 
@@ -227,7 +227,7 @@ fn drawMenuOption(text: [:0]const u8, y: i32, selected: bool) void {
     rl.drawText(text, @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText(text, font_size), 2), y, font_size, color);
 }
 
-pub fn drawMainMenu(g: *Game) void {
+pub fn drawMainMenu(game: *Game) void {
     // Game Logo Adding
     drawMenuTitle("ASTEROIDS");
 
@@ -235,21 +235,21 @@ pub fn drawMainMenu(g: *Game) void {
     const start_y = @divTrunc(Global.current_screen_height, 2) - 40;
     const spacing = 50; // for adding space in the menu
     // TODO
-    drawMenuOption("START GAME", start_y, g.selected_option == menu_start);
-    drawMenuOption("OPTIONS", start_y + spacing, g.selected_option == menu_options);
-    drawMenuOption("CONTROLS", start_y + spacing * 2, g.selected_option == menu_controls);
-    drawMenuOption("EXIT", start_y + spacing * 3, g.selected_option == menu_exit);
+    drawMenuOption("START GAME", start_y, game.selected_option == menu_start);
+    drawMenuOption("OPTIONS", start_y + spacing, game.selected_option == menu_options);
+    drawMenuOption("CONTROLS", start_y + spacing * 2, game.selected_option == menu_controls);
+    drawMenuOption("EXIT", start_y + spacing * 3, game.selected_option == menu_exit);
 
     // Footer - FIXED positioning
     rl.drawText("© 2025 Karlo Siric", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("© 2025 Karlo Siric", 15), 2), Global.current_screen_height - 30, 15, .gray);
 
     // Showing high score if it exists - FIXED positioning
-    if (g.high_score > 0) {
-        rl.drawText(rl.textFormat("HIGH SCORE: %d", .{g.high_score}), @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText(rl.textFormat("HIGH SCORE: %d", .{g.high_score}), 20), 2), Global.current_screen_height - 60, 20, .yellow);
+    if (game.high_score > 0) {
+        rl.drawText(rl.textFormat("HIGH SCORE: %d", .{game.high_score}), @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText(rl.textFormat("HIGH SCORE: %d", .{game.high_score}), 20), 2), Global.current_screen_height - 60, 20, .yellow);
     }
 }
 
-pub fn drawOptionsMenu(g: *Game) void {
+pub fn drawOptionsMenu(game: *Game) void {
     drawMenuTitle("OPTIONS");
 
     const start_y = @divTrunc(Global.current_screen_height, 2) - 60;
@@ -266,29 +266,29 @@ pub fn drawOptionsMenu(g: *Game) void {
     var resolution_text: [40:0]u8 = undefined;
 
     {
-        const s = if (g.settings.sound_enabled) "ON" else "OFF";
+        const s = if (game.settings.sound_enabled) "ON" else "OFF";
         _ = std.fmt.bufPrintZ(&sound_text, "SOUND: {s}", .{s}) catch @panic("bufPrintZ() failed");
     }
     {
-        const s = if (g.settings.music_enabled) "ON" else "OFF";
+        const s = if (game.settings.music_enabled) "ON" else "OFF";
         _ = std.fmt.bufPrintZ(&music_text, "MUSIC: {s}", .{s}) catch @panic("bufPrintZ() failed");
     }
     {
-        const s = if (g.settings.show_fps) "ON" else "OFF";
+        const s = if (game.settings.show_fps) "ON" else "OFF";
         _ = std.fmt.bufPrintZ(&fps_text, "SHOW FPS: {s}", .{s}) catch @panic("bufPrintZ() failed");
     }
     {
-        const s = if (g.settings.fullscreen) "ON" else "OFF";
+        const s = if (game.settings.fullscreen) "ON" else "OFF";
         _ = std.fmt.bufPrintZ(&fullscreen_text, "FULLSCREEN: {s}", .{s}) catch @panic("bufPrintZ() failed");
     }
     {
-        const s = g.resolutions[@intCast(g.current_resolution)].name;
+        const s = game.resolutions[@intCast(game.current_resolution)].name;
         _ = std.fmt.bufPrintZ(&resolution_text, "RESOLUTION: {s}", .{s}) catch @panic("bufPrintZ() failed");
     }
 
     // setting difficulty switch case
     {
-        const s = switch (g.settings.difficulty) {
+        const s = switch (game.settings.difficulty) {
             0 => "EASY",
             1 => "NORMAL",
             2 => "HARD",
@@ -297,13 +297,13 @@ pub fn drawOptionsMenu(g: *Game) void {
         _ = std.fmt.bufPrintZ(&difficulty_text, "DIFFICULTY: {s}", .{s}) catch @panic("bufPrintZ() failed");
     }
 
-    drawMenuOption(&sound_text, start_y, g.selected_option == menu_sound);
-    drawMenuOption(&music_text, start_y + spacing, g.selected_option == menu_music);
-    drawMenuOption(&fps_text, start_y + spacing * 2, g.selected_option == menu_fps);
-    drawMenuOption(&difficulty_text, start_y + spacing * 3, g.selected_option == menu_difficulty);
-    drawMenuOption(&resolution_text, start_y + spacing * 4, g.selected_option == menu_resolution);
-    drawMenuOption(&fullscreen_text, start_y + spacing * 5, g.selected_option == menu_fullscreen);
-    drawMenuOption("BACK", start_y + spacing * 6, g.selected_option == menu_back);
+    drawMenuOption(&sound_text, start_y, game.selected_option == menu_sound);
+    drawMenuOption(&music_text, start_y + spacing, game.selected_option == menu_music);
+    drawMenuOption(&fps_text, start_y + spacing * 2, game.selected_option == menu_fps);
+    drawMenuOption(&difficulty_text, start_y + spacing * 3, game.selected_option == menu_difficulty);
+    drawMenuOption(&resolution_text, start_y + spacing * 4, game.selected_option == menu_resolution);
+    drawMenuOption(&fullscreen_text, start_y + spacing * 5, game.selected_option == menu_fullscreen);
+    drawMenuOption("BACK", start_y + spacing * 6, game.selected_option == menu_back);
 
     // Instructions in the menu
     rl.drawText("<- -> to change settings", @divTrunc(Global.current_screen_width, 2) - @divTrunc(rl.measureText("<- -> to change settings", 15), 2), Global.current_screen_height - 30, 15, .gray);
