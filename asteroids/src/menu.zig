@@ -1,7 +1,7 @@
 const Sound = @import("sound.zig");
-const Game = @import("game.zig").Game;
+const Game = @import("game.zig");
 const Resolution = @import("resolution.zig").Resolution;
-const max_resolutions = @import("resolution.zig").max_resolutions;
+const max_resolutions = Resolution.max_resolutions;
 
 const rl = @import("raylib");
 
@@ -24,31 +24,31 @@ const menu_options_count = 7;
 
 pub fn updateMainMenu(g: *Game) void {
     // Navigation bar
-    const menu_changed = false;
+    var menu_changed = false;
 
     if (rl.isKeyPressed(.down)) {
-        g.selected_option = (g.selected_option + 1) % menu_main_count;
+        g.selected_option = @mod((g.selected_option + 1), menu_main_count);
         menu_changed = true;
     } else if (rl.isKeyPressed(.up)) {
         // FIX: Proper handling of wrap-around when going up in menu
-        g.selected_option = (g.selected_option - 1 + menu_main_count) % menu_main_count;
+        g.selected_option = @mod((g.selected_option - 1 + menu_main_count), menu_main_count);
         menu_changed = true;
     }
 
     // Play sound on menu navigation
     if (menu_changed and g.settings.sound_enabled) {
-        rl.playGameSound(g.sound_manager, .menu_select);
+        Sound.playGameSound(g.sound_manager, .menu_select);
     }
 
     // Selected
     if (rl.isKeyPressed(.enter)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
-            rl.playGameSound(g.sound_manager, .menu_select);
+            Sound.playGameSound(g.sound_manager, .menu_select);
         }
 
-        switch (g.selectedOption) {
-            menu_start => g.state = .gameplay,
+        switch (g.selected_option) {
+            menu_start => g.state = .game_play,
             menu_options => {
                 g.state = .options_menu;
                 g.selected_option = 0; // need to reset the select for this to start from 0
@@ -61,42 +61,37 @@ pub fn updateMainMenu(g: *Game) void {
                 // The proper Cleanup happens in the mai part of the main loop WindowShouldClose()
                 rl.closeWindow();
             },
+            else => {},
         }
     }
 }
 
-pub fn updateOptionsMenu(g:*Game) void
-{
+pub fn updateOptionsMenu(g: *Game) void {
     // Navigation
-    bool menu_changed = false;
-    
-    if (rl.isKeyPressed(.down))
-    {
-        g.selected_option = (g.selected_option + 1) % menu_options_count;
+    var menu_changed = false;
+
+    if (rl.isKeyPressed(.down)) {
+        g.selected_option = @mod((g.selected_option + 1), menu_options_count);
         menu_changed = true;
-    }
-    else if (rl.isKeyPressed(.up))
-    {
-        g.selected_option = (g.selected_option - 1 + menu_options_count) % menu_options_count;
+    } else if (rl.isKeyPressed(.up)) {
+        g.selected_option = @mod((g.selected_option - 1 + menu_options_count), menu_options_count);
         menu_changed = true;
     }
 
     // Play sound on menu navigation
     if (menu_changed and g.settings.sound_enabled) {
-        rl.playGameSound(g.sound_manager, .menu_select);
+        Sound.playGameSound(g.sound_manager, .menu_select);
     }
 
     // Change settings with left/right keybinds
-    if (rl.isKeyPressed(.right) or rl.isKeyPressed(.left))
-    {
+    if (rl.isKeyPressed(.right) or rl.isKeyPressed(.left)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
-            rl.playGameSound(g.sound_manager, .menu_select);
+            Sound.playGameSound(g.sound_manager, .menu_select);
         }
-        
+
         // toggle or cycle values
-        switch(g.selected_option)
-        {
+        switch (g.selected_option) {
             menu_sound => {
                 g.settings.sound_enabled = !g.settings.sound_enabled;
                 // Update sound manager
@@ -111,83 +106,74 @@ pub fn updateOptionsMenu(g:*Game) void
                 g.settings.show_fps = !g.settings.show_fps;
             },
             menu_resolution => {
-                if (rl.isKeyPressed(.right))
-                {
+                if (rl.isKeyPressed(.right)) {
                     // Cycle to next resolution
-                    const new_res = (g.current_resolution + 1) % max_resolutions;
-                    Resolution.changeResolution(g, new_res);
-                }
-                else
-                {
+                    const new_res = @mod((g.current_resolution + 1), max_resolutions);
+                    Resolution.changeResolution(g, @intCast(new_res));
+                } else {
                     // Cycle to previous resolution
-                    const new_res = (g.current_resolution - 1 + max_resolutions) % max_resolutions;
-                    Resolution.changeResolution(g, new_res);
+                    const new_res = @mod((g.current_resolution - 1 + max_resolutions), max_resolutions);
+                    Resolution.changeResolution(g, @intCast(new_res));
                 }
             },
             menu_fullscreen => {
                 Resolution.toggleFullscreenMode(g);
             },
             menu_difficulty => {
-                if (rl.isKeyPressed(.right))
-                {
-                    g.settings.difficulty = (g.settings.difficulty + 1) % 3;
-                }
-                else {
-                    g.settings.difficulty = (g.settings.difficulty - 1 + 3) % 3;
+                if (rl.isKeyPressed(.right)) {
+                    g.settings.difficulty = @mod((g.settings.difficulty + 1), 3);
+                } else {
+                    g.settings.difficulty = @mod((g.settings.difficulty - 1 + 3), 3);
                 }
             },
+            else => {},
         }
     }
 
-    if (rl.isKeyPressed(.enter))
-    {
+    if (rl.isKeyPressed(.enter)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
             Sound.playGameSound(g.sound_manager, .menu_select);
         }
-        
-        if (g.selected_option == menu_back)
-        {
+
+        if (g.selected_option == menu_back) {
             g.state = .main_menu;
-            g.selected_option = .menu_options;
+            g.selected_option = menu_options;
         }
     }
 
     // Going back using ESC keys
-    if (rl.isKeyPressed(.escape))
-    {
+    if (rl.isKeyPressed(.escape)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
             Sound.playGameSound(g.sound_manager, .menu_select);
         }
-        
-        g.state = main_menu;
-        g.selected_option = .menu_options;
-    }
 
-pub fn updateControlsMenu(g :*Game) void
-{
-    // Only need to handle back action
-    if (rl.isKeyPressed(.enter) or rl.isKeyPressed(.escape))
-    {
-        // Play selection sound
-        if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound_manager, .menu_select);
-        }
-        
-        game->state = .main_menu;
-        game->selected_option = menu_controls;           // usually is always selected at main menu controls
+        g.state = .main_menu;
+        g.selected_option = menu_options;
     }
 }
 
-void updatePauseMenu(g: *Game)
-{
+pub fn updateControlsMenu(g: *Game) void {
+    // Only need to handle back action
+    if (rl.isKeyPressed(.enter) or rl.isKeyPressed(.escape)) {
+        // Play selection sound
+        if (g.settings.sound_enabled) {
+            Sound.playGameSound(g.sound_manager, .menu_select);
+        }
+
+        g.state = .main_menu;
+        g.selected_option = menu_controls; // usually is always selected at main menu controls
+    }
+}
+
+pub fn updatePauseMenu(g: *Game) void {
     // We only need two options
     var menu_changed = false;
-    
-    if (rl.isKeyPressed(.down) or rl.isKeyPressed(.up))
-    {
-        g.selected_option = !g.selected_option;               // toggle between 0 and 1
+
+    if (rl.isKeyPressed(.down) or rl.isKeyPressed(.up)) {
+        // g.selected_option = !g.selected_option;
+        g.selected_option = if (g.selected_option == 0) 1 else 0; // toggle between 0 and 1
         menu_changed = true;
     }
 
@@ -196,32 +182,27 @@ void updatePauseMenu(g: *Game)
         Sound.playGameSound(g.sound_manager, .menu_select);
     }
 
-    if (rl.isKeyPressed(.enter))
-    {
+    if (rl.isKeyPressed(.enter)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
             Sound.playGameSound(g.sound_manager, .menu_select);
         }
-        
-        if (g.selected_option == 0)
-        {
+
+        if (g.selected_option == 0) {
             // Resume
-            g.state = .gameplay;
-        }
-        else 
-        {
-            g.state = main_menu;
+            g.state = .game_play;
+        } else {
+            g.state = .main_menu;
             g.selected_option = 0;
         }
     }
 
-    if (rl.isKeyPressed(.escape) or rl.isKeyPressed(.p))
-    {
+    if (rl.isKeyPressed(.escape) or rl.isKeyPressed(.p)) {
         // Play selection sound
-        if ( g.settings.sound_enabled) {
+        if (g.settings.sound_enabled) {
             Sound.playGameSound(g.sound_manager, .menu_select);
         }
-        
-        g.state = .gameplay;
+
+        g.state = .game_play;
     }
 }

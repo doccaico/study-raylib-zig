@@ -1,8 +1,8 @@
-const builtin = @import("builtin");
+// const builtin = @import("builtin");
 const std = @import("std");
 const config = @import("config.zig");
 const Sound = @import("sound.zig");
-const Game = @import("game.zig").Game;
+const Game = @import("game.zig");
 const Resolution = @import("resolution.zig").Resolution;
 
 const rl = @import("raylib");
@@ -29,8 +29,8 @@ pub fn main() !void {
     defer sound_manager.deinit();
 
     // Initialize the Game itself
-    var game: Game = undefined;
-    Game.init(&game, &sound_manager);
+    var g: Game = undefined;
+    Game.init(&g, &sound_manager);
 
     // var prng = std.Random.DefaultPrng.init(blk: {
     //     var seed: u64 = undefined;
@@ -52,8 +52,10 @@ pub fn main() !void {
     while (!rl.windowShouldClose()) {
         // We handle the F11 key for fullscreen toggle
         if (rl.isKeyPressed(.f11)) {
-            Resolution.toggleFullscreenMode(&game);
+            Resolution.toggleFullscreenMode(&g);
         }
+
+        Game.update(&g);
 
         rl.beginDrawing();
         defer rl.endDrawing();

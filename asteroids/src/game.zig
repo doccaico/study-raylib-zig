@@ -1,21 +1,22 @@
-const config = @import("config.zig");
-const Player = @import("player.zig").Player;
+const Config = @import("config.zig");
+const Util = @import("util.zig");
+const Global = @import("global.zig");
+const Menu = @import("menu.zig");
+const Player = @import("player.zig");
 const Sound = @import("sound.zig");
-const Asteroid = @import("asteroids.zig").Asteroid;
-const max_asteroids = @import("asteroids.zig").max_asteroids;
-const Bullet = @import("bullet.zig").Bullet;
-const max_bullets = @import("bullet.zig").max_bullets;
-const Star = @import("stars.zig").Star;
-const max_stars = @import("stars.zig").max_stars;
+const Asteroid = @import("asteroid.zig");
+const max_asteroids = Asteroid.max_asteroids;
+const Bullet = @import("bullet.zig");
+const max_bullets = Bullet.max_bullets;
+const Star = @import("star.zig");
+const max_stars = Star.max_stars;
 const Resolution = @import("resolution.zig").Resolution;
-const max_resolutions = @import("resolution.zig").max_resolutions;
-
-const menu = @import("menu.zig");
+const max_resolutions = Resolution.max_resolutions;
 
 const rl = @import("raylib");
 
 // Game states
-const State = enum {
+pub const State = enum {
     main_menu,
     game_play,
     game_over,
@@ -34,130 +35,126 @@ const Settings = struct {
 };
 
 // Game Architecture
-pub const Game = struct {
-    state: GameState,
-    score: i32,
-    player: Player, // still missing needs to be implemented in player.h first
-    asteroids: [max_asteroids]Asteroid,
-    bullets: [max_bullets]Bullet,
-    stars: [max_stars]Star, // added the array of Star structures that we need
-    selected_option: i32, // used for tracking which menu option has been selected
-    settings: Settings, // structure containg game settings to the game
-    high_score: i32, // added additionally as well not present in v1.0
-    current_resolution: i32,
-    resolutions: [max_resolutions]Resolution,
-    default_screen_width: i32,
-    default_screen_height: i32,
-    sound_manager: *Sound.Manager, // Added sound manager pointer
+state: State,
+score: i32,
+player: Player, // still missing needs to be implemented in player.h first
+asteroids: [max_asteroids]Asteroid,
+bullets: [max_bullets]Bullet,
+stars: [max_stars]Star, // added the array of Star structures that we need
+selected_option: i32, // used for tracking which menu option has been selected
+settings: Settings, // structure containg game settings to the game
+high_score: i32, // added additionally as well not present in v1.0
+current_resolution: i32,
+resolutions: [max_resolutions]Resolution,
+default_screen_width: i32,
+default_screen_height: i32,
+sound_manager: *Sound.Manager, // Added sound manager pointer
 
-    pub fn init(g: *Game, sound_manager: *Sound.Manager) void {
-        // init global variables
-        globals.current_screen_width = config.screen_width;
-        globals.current_screen_height = config.screen_height;
+pub const Game = @This();
 
-        // dereferencing the pointer and using -> syntax in this case
-        g.state = .main_menu; // we initially set this to the MENU part of the game
-        g.score = 0; // we then set the score to be equal to 0 for its own sake of the game
-        g.high_score = 0;
-        g.selected_option = 0; // added new into this version, did not have it in v1.0
-        g.settings.fullscreen = false; // we initialize it to start with false at the start of the game
+pub fn init(g: *Game, sound_manager: *Sound.Manager) void {
+    // init global variables
+    Global.current_screen_width = Config.screen_width;
+    Global.current_screen_height = Config.screen_height;
 
-        // Initializing settings
-        g.settings.sound_enabled = true;
-        g.settings.music_enabled = true;
-        g.settings.show_fps = false;
-        g.settings.difficulty = 1;
+    // dereferencing the pointer and using -> syntax in this case
+    g.state = .main_menu; // we initially set this to the MENU part of the game
+    g.score = 0; // we then set the score to be equal to 0 for its own sake of the game
+    g.high_score = 0;
+    g.selected_option = 0; // added new into this version, did not have it in v1.0
+    g.settings.fullscreen = false; // we initialize it to start with false at the start of the game
 
-        Player.init(&g.player); // initialize the player
+    // Initializing settings
+    g.settings.sound_enabled = true;
+    g.settings.music_enabled = true;
+    g.settings.show_fps = false;
+    g.settings.difficulty = 1;
 
-        Asteroid.init(&g.asteroids); // initialize the asteroids
+    Player.init(&g.player); // initialize the player
 
-        Bullet.init(&g.bullets); // initialize the bullets
+    Asteroid.init(&g.asteroids); // initialize the asteroids
 
-        Star.init(&g.stars); // Initialize the stars, added new not present in v1.0
+    Bullet.init(&g.bullets); // initialize the bullets
 
-        Resolution.init(g); // Initialize resolutions AFTER other components
+    Star.init(&g.stars); // Initialize the stars, added new not present in v1.0
 
-        g.sound_manager = sound_manager; // Link the sound manager to the game
+    Resolution.init(g); // Initialize resolutions AFTER other components
 
-        // Initialize the sound manager (if it exists)
-        Sound.Manager.toggleSoundEnabled(g.sound_manager, g.settings.sound_enabled);
-        Sound.Manager.toggleMusicEnabled(g.sound_manager, g.settings.music_enabled);
+    g.sound_manager = sound_manager; // Link the sound manager to the game
 
-        for (0..5) |_| {
-            Asteroid.spawn(&g.asteroids);
-        }
+    // Initialize the sound manager (if it exists)
+    Sound.Manager.toggleSoundEnabled(g.sound_manager, g.settings.sound_enabled);
+    Sound.Manager.toggleMusicEnabled(g.sound_manager, g.settings.music_enabled);
+
+    for (0..5) |_| {
+        Asteroid.spawn(&g.asteroids);
     }
+}
 
-pub fn UpdateGame(g :*Game) void
-{
+pub fn update(g: *Game) void {
     // Update music
     Sound.updateGameMusic(g.sound_manager, g);
 
     // Check first if we should exit the application
-    if (WindowShouldClose()) 
-    {
+    if (rl.windowShouldClose()) {
         // This is the exit process triggered by the window X button
         // You may want to add confirmation here
         return;
     }
 
-    // Handle pausing during gameplay - ONLY pause, don't exit
-    if (g.state == .gameplay and rl.isKeyPressed(.p))
-    {
+    // Handle pausing during game_play - ONLY pause, don't exit
+    if (g.state == .game_play and rl.isKeyPressed(.p)) {
         g.state = .paused;
-        g.selected_option = 0;   // Default to Resume
-        
+        g.selected_option = 0; // Default to Resume
+
         // Pause music when game is paused
-        PauseGameMusic(g.soundManager);
-        
+        Sound.pauseGameMusic(g.sound_manager);
+
         return;
     }
-    
-    // Handle ESC during gameplay to return to main menu
-    if (g.state == .gameplay and rl.isKeyPressed(.escape))
-    {
+
+    // Handle ESC during game_play to return to main menu
+    if (g.state == .game_play and rl.isKeyPressed(.escape)) {
         g.state = .main_menu;
-        g.selectedOption = 0;   // Default to first option
-        
+        g.selected_option = 0; // Default to first option
+
         // Play menu select sound
         if (g.settings.sound_enabled) {
-            rl.playGameSound(g.sound_manager, .menu_select);
+            Sound.playGameSound(g.sound_manager, .menu_select);
         }
-        
+
         return;
     }
 
     // Handle different game states
-    switch (g.state)
-    {
+    switch (g.state) {
         .main_menu => {
-            menu.updateMainMenu(g);
-            updateStars(g.stars);
+            Menu.updateMainMenu(g);
+            Star.update(&g.stars);
         },
 
         .options_menu => {
-            menu.updateOptionsMenu(g);
-            updateStars(g.stars);
+            Menu.updateOptionsMenu(g);
+            Star.update(&g.stars);
         },
 
         .controls_menu => {
-            menu.updateControlsMenu(g);
-            updateStars(g.stars);
+            Menu.updateControlsMenu(g);
+            Star.update(&g.stars);
         },
         .paused => {
-            updatePauseMenu(g);
+            Menu.updatePauseMenu(g);
         },
-        .gameplay => {
+        .game_play => {
             // Add braces to create a new scope for local variables
             // Store previous thrusting state to detect changes
             const was_thrusting_before = g.player.is_thrusting;
             const previous_shoot_cooldown = g.player.shoot_cooldown;
 
-            Player.updatePlayer(&g.player, g.bullets); 
+            Player.update(&g.player, &g.bullets);
 
             // Play thrust sound if player just started thrusting
-            if (!was_thrusting_before && g.player.is_thrusting) {
+            if (!was_thrusting_before and g.player.is_thrusting) {
                 if (g.settings.sound_enabled) {
                     Sound.playGameSound(g.sound_manager, .thrust);
                 }
@@ -170,70 +167,82 @@ pub fn UpdateGame(g :*Game) void
                 }
             }
 
-            // TODO
-            UpdateAsteroid(g.asteroids);
-            UpdateBullets(g.bullets);
-            UpdateStars(g.stars);
+            // TODO 後でやる
+            // UpdateAsteroid(g.asteroids);
+            // UpdateBullets(g.bullets);
+            // UpdateStars(g.stars);
+            //
 
             // We check the collisions - added sound support for collisions
-            GameState previousState = g.state;
-            int previousScore = g.score;
+            const previous_state = g.state;
+            const previous_score = g.score;
 
-            checkCollisions(&g.player, g.asteroids, g.bullets, &g.score, &g.state);
+            Util.checkCollisions(&g.player, &g.asteroids, &g.bullets, &g.score, &g.state);
 
             // If score changed, an asteroid was hit
-            if (g.score > previousScore) {
-                if (g.soundManager != NULL && g.settings.soundEnabled) {
+            if (g.score > previous_score) {
+                if (g.settings.sound_enabled) {
                     // Choose between small and large explosion sound randomly
-                    if (GetRandomValue(0, 1) == 0) {
-                        PlayGameSound(g.soundManager, SOUND_EXPLOSION_SMALL);
+                    if (rl.getRandomValue(0, 1) == 0) {
+                        Sound.playGameSound(g.sound_manager, .explosion_small);
                     } else {
-                        PlayGameSound(g.soundManager, SOUND_EXPLOSION_BIG);
+                        Sound.playGameSound(g.sound_manager, .explosion_big);
                     }
                 }
             }
 
             // If state changed to GAME_OVER, player collided with asteroid
-            if (previousState != GAME_OVER && g.state == GAME_OVER) {
-                if (g.soundManager != NULL && g.settings.soundEnabled) {
-                    PlayGameSound(g.soundManager, SOUND_EXPLOSION_BIG);
-                    PlayGameSound(g.soundManager, SOUND_GAME_OVER);
+            if (previous_state != .game_over and g.state == .game_over) {
+                if (g.settings.sound_enabled) {
+                    Sound.playGameSound(g.sound_manager, .explosion_big);
+                    Sound.playGameSound(g.sound_manager, .game_over);
                 }
             }
         },
 
-        case GAME_OVER:
+        .game_over => {
             // Check for the high score
-            if (g.score > g.highScore)
-            {
-                g.highScore = g.score;
+            if (g.score > g.high_score) {
+                g.high_score = g.score;
             }
 
             // Now here we handle the restart or return to menu
-            if (IsKeyPressed(KEY_ENTER))
-            {
-                ResetGame(game);
-                g.state = GAMEPLAY;
-                
+            if (rl.isKeyPressed(.enter)) {
+                resetGame(g);
+                g.state = .game_play;
+
                 // Play select sound
-                if (g.soundManager != NULL && g.settings.soundEnabled) {
-                    PlayGameSound(g.soundManager, SOUND_MENU_SELECT);
+                if (g.settings.sound_enabled) {
+                    Sound.playGameSound(g.sound_manager, .menu_select);
                 }
-            }
-            else if (IsKeyPressed(KEY_ESCAPE))
-            {
-                ResetGame(game);
-                g.state = MAIN_MENU;
-                g.selectedOption = 0;
-                
+            } else if (rl.isKeyPressed(.escape)) {
+                resetGame(g);
+                g.state = .main_menu;
+                g.selected_option = 0;
+
                 // Play select sound
-                if (g.soundManager != NULL && g.settings.soundEnabled) {
-                    PlayGameSound(g.soundManager, SOUND_MENU_SELECT);
+                if (g.settings.sound_enabled) {
+                    Sound.playGameSound(g.sound_manager, .menu_select);
                 }
             }
             // Keep updating stars for visual effect
-            UpdateStars(g.stars);
-            break;
+            Star.update(&g.stars);
+        },
     }
 }
-};
+
+// Implementing the reset game feature
+fn resetGame(g: *Game) void {
+    // We reset the player
+    Player.init(&g.player);
+
+    Asteroid.init(&g.asteroids);
+    Bullet.init(&g.bullets);
+
+    // now we spawn those initial asteroids once again
+    for (0..5) |_| {
+        Asteroid.spawn(&g.asteroids);
+    }
+    // reset the score finally
+    g.score = 0;
+}
