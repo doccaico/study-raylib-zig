@@ -1,5 +1,5 @@
+const global = @import("global.zig");
 const Game = @import("Game.zig");
-const Global = @import("global.zig");
 const Star = @import("Star.zig");
 
 const rl = @import("raylib");
@@ -28,8 +28,8 @@ pub fn toggleFullscreenMode(game: *Game) void {
 
     if (!rl.isWindowFullscreen()) {
         // Save current window dimensions before going fullscreen
-        game.default_screen_width = Global.current_screen_width;
-        game.default_screen_height = Global.current_screen_height;
+        game.default_screen_width = global.current_screen_width;
+        game.default_screen_height = global.current_screen_height;
 
         // Get monitor dimensions for proper fullscreen
         const monitor_width = rl.getMonitorWidth(monitor);
@@ -43,8 +43,8 @@ pub fn toggleFullscreenMode(game: *Game) void {
         rl.toggleFullscreen();
 
         // Update screen dimensions to monitor size
-        Global.current_screen_width = monitor_width;
-        Global.current_screen_height = monitor_height;
+        global.current_screen_width = monitor_width;
+        global.current_screen_height = monitor_height;
 
         // Update fullscreen flag
         game.settings.fullscreen = true;
@@ -59,8 +59,8 @@ pub fn toggleFullscreenMode(game: *Game) void {
         rl.setWindowSize(cur_res.width, cur_res.height);
 
         // Update screen dimensions
-        Global.current_screen_width = cur_res.width;
-        Global.current_screen_height = cur_res.height;
+        global.current_screen_width = cur_res.width;
+        global.current_screen_height = cur_res.height;
 
         // Center window
         const display_width = rl.getMonitorWidth(monitor);
@@ -82,8 +82,8 @@ fn handleSelfChange(game: *Game) void {
     Star.init(&game.stars);
 
     // Reset player to center of new screen
-    game.player.position.x = @floatFromInt(@divTrunc(Global.current_screen_width, 2));
-    game.player.position.y = @floatFromInt(@divTrunc(Global.current_screen_height, 2));
+    game.player.position.x = @floatFromInt(@divTrunc(global.current_screen_width, 2));
+    game.player.position.y = @floatFromInt(@divTrunc(global.current_screen_height, 2));
 }
 
 pub fn changeResolution(game: *Game, new_resolution_index: usize) void {
@@ -109,8 +109,8 @@ pub fn changeResolution(game: *Game, new_resolution_index: usize) void {
     rl.setWindowPosition(@divTrunc((display_width - new_res.width), 2), @divTrunc((display_height - new_res.height), 2));
 
     // Update screen dimension globals
-    Global.current_screen_width = new_res.width;
-    Global.current_screen_height = new_res.height;
+    global.current_screen_width = new_res.width;
+    global.current_screen_height = new_res.height;
 
     // Update current resolution index
     game.current_resolution = @intCast(new_resolution_index);
