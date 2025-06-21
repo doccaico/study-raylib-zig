@@ -16,24 +16,22 @@ life_time: f32,
 color: rl.Color, // Added color for visual variety
 alpha: f32, // Added alpha for fading effect
 
-const Bullet = @This();
+const Self = @This();
 
-pub fn init(b: []Bullet) void {
+pub fn init(self: []Self) void {
     for (0..max_bullets) |i| {
-        b[i].active = false;
+        self[i].active = false;
     }
 }
 
-const Bullets = @This();
-
-pub fn shootBullets(b: *[max_bullets]Bullets, position: rl.Vector2, rotation: f32) void {
+pub fn shootBullets(self: *[max_bullets]Self, position: rl.Vector2, rotation: f32) void {
     // We'll shoot 3 bullets with a slight spread for a more interesting effect
     var spread: isize = -1;
     while (spread <= 1) : (spread += 1) {
         // Find an inactive bullet to use
         for (0..max_bullets) |i| {
             {
-                if (!b[i].active) {
+                if (!self[i].active) {
                     // Get the actual rotation with spread
                     const bullet_rotation = rotation + @as(f32, @floatFromInt(spread)) * bullet_spread;
 
@@ -41,23 +39,23 @@ pub fn shootBullets(b: *[max_bullets]Bullets, position: rl.Vector2, rotation: f3
                     const cosA = @cos(bullet_rotation * std.math.rad_per_deg);
                     const sinA = @sin(bullet_rotation * std.math.rad_per_deg);
 
-                    b[i].position = position;
-                    b[i].velocity.x = cosA * bullet_speed;
-                    b[i].velocity.y = sinA * bullet_speed;
+                    self[i].position = position;
+                    self[i].velocity.x = cosA * bullet_speed;
+                    self[i].velocity.y = sinA * bullet_speed;
                     // Slightly different sizes
-                    b[i].radius = 3.0 + @as(f32, @floatFromInt(@abs(spread))) * 0.5;
+                    self[i].radius = 3.0 + @as(f32, @floatFromInt(@abs(spread))) * 0.5;
                     // Center bullet lasts longer
-                    b[i].life_time = @floatFromInt(bullet_lifetime - @abs(spread) * 10);
-                    b[i].active = true;
-                    b[i].alpha = 1.0;
+                    self[i].life_time = @floatFromInt(bullet_lifetime - @abs(spread) * 10);
+                    self[i].active = true;
+                    self[i].alpha = 1.0;
 
                     // Set different colors for visual interest
                     if (spread == 0) {
-                        b[i].color = rl.Color.init(255, 255, 255, 255); // White for center
+                        self[i].color = rl.Color.init(255, 255, 255, 255); // White for center
                     } else if (spread == -1) {
-                        b[i].color = rl.Color.init(0, 200, 255, 255); // Blue-ish
+                        self[i].color = rl.Color.init(0, 200, 255, 255); // Blue-ish
                     } else {
-                        b[i].color = rl.Color.init(255, 200, 0, 255); // Yellow-ish
+                        self[i].color = rl.Color.init(255, 200, 0, 255); // Yellow-ish
                     }
 
                     break; // We found an inactive bullet to use, so break the inner loop

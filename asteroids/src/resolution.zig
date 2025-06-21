@@ -1,6 +1,6 @@
-const Game = @import("game.zig");
+const Game = @import("Game.zig");
 const Global = @import("global.zig");
-const Star = @import("star.zig");
+const Star = @import("Star.zig");
 
 const rl = @import("raylib");
 
@@ -10,28 +10,28 @@ width: i32,
 height: i32,
 name: [:0]const u8,
 
-pub const Resolution = @This();
+pub const Self = @This();
 
-pub fn init(g: *Game) void {
-    g.resolutions[0] = Resolution{ .width = 800, .height = 600, .name = "800x600" };
-    g.resolutions[1] = Resolution{ .width = 1024, .height = 768, .name = "1024x768" };
-    g.resolutions[2] = Resolution{ .width = 1280, .height = 720, .name = "1280x720 (HD)" };
-    g.resolutions[3] = Resolution{ .width = 1920, .height = 1080, .name = "1920x1080 (FHD)" };
+pub fn init(game: *Game) void {
+    game.resolutions[0] = Self{ .width = 800, .height = 600, .name = "800x600" };
+    game.resolutions[1] = Self{ .width = 1024, .height = 768, .name = "1024x768" };
+    game.resolutions[2] = Self{ .width = 1280, .height = 720, .name = "1280x720 (HD)" };
+    game.resolutions[3] = Self{ .width = 1920, .height = 1080, .name = "1920x1080 (FHD)" };
 
-    g.current_resolution = 2; // Default to 1280x720
+    game.current_resolution = 2; // Default to 1280x720
 
     // Store the default screen dimensions
-    g.default_screen_width = rl.getScreenWidth();
-    g.default_screen_height = rl.getScreenHeight();
+    game.default_screen_width = rl.getScreenWidth();
+    game.default_screen_height = rl.getScreenHeight();
 }
 
-pub fn toggleFullscreenMode(g: *Game) void {
+pub fn toggleFullscreenMode(game: *Game) void {
     const monitor = rl.getCurrentMonitor();
 
     if (!rl.isWindowFullscreen()) {
         // Save current window dimensions before going fullscreen
-        g.default_screen_width = Global.current_screen_width;
-        g.default_screen_height = Global.current_screen_height;
+        game.default_screen_width = Global.current_screen_width;
+        game.default_screen_height = Global.current_screen_height;
 
         // Get monitor dimensions for proper fullscreen
         const monitor_width = rl.getMonitorWidth(monitor);
@@ -49,13 +49,13 @@ pub fn toggleFullscreenMode(g: *Game) void {
         Global.current_screen_height = monitor_height;
 
         // Update fullscreen flag
-        g.settings.fullscreen = true;
+        game.settings.fullscreen = true;
     } else {
         // Exit fullscreen first
         rl.toggleFullscreen();
 
         // Get the current resolution from the selected resolution index
-        const cur_res = g.resolutions[@intCast(g.current_resolution)];
+        const cur_res = game.resolutions[@intCast(game.current_resolution)];
 
         // Restore window size to the selected resolution
         rl.setWindowSize(cur_res.width, cur_res.height);
@@ -70,25 +70,25 @@ pub fn toggleFullscreenMode(g: *Game) void {
         rl.setWindowPosition(@divTrunc((display_width - cur_res.width), 2), @divTrunc((display_height - cur_res.height), 2));
 
         // Update fullscreen flag
-        g.settings.fullscreen = false;
+        game.settings.fullscreen = false;
     }
 
     // Apply necessary adjustments for the new screen size
-    handleResolutionChange(g);
+    handleSelfChange(game);
 }
 
-fn handleResolutionChange(g: *Game) void {
+fn handleSelfChange(game: *Game) void {
     // Adjust game elements based on new resolution if needed
 
     // Reinitialize stars to fill the new screen dimensions
-    Star.init(&g.stars);
+    Star.init(&game.stars);
 
     // Reset player to center of new screen
-    g.player.position.x = @floatFromInt(@divTrunc(Global.current_screen_width, 2));
-    g.player.position.y = @floatFromInt(@divTrunc(Global.current_screen_height, 2));
+    game.player.position.x = @floatFromInt(@divTrunc(Global.current_screen_width, 2));
+    game.player.position.y = @floatFromInt(@divTrunc(Global.current_screen_height, 2));
 }
 
-pub fn changeResolution(g: *Game, new_resolution_index: usize) void {
+pub fn changeResolution(game: *Game, new_resolution_index: usize) void {
     if (new_resolution_index < 0 or new_resolution_index >= max_resolutions) {
         return; // Invalid resolution index
     }
@@ -96,11 +96,11 @@ pub fn changeResolution(g: *Game, new_resolution_index: usize) void {
     // If we're currently in fullscreen, exit fullscreen first
     if (rl.isWindowFullscreen()) {
         rl.toggleFullscreen();
-        g.settings.fullscreen = false;
+        game.settings.fullscreen = false;
     }
 
     // Update resolution details
-    const new_res = g.resolutions[new_resolution_index];
+    const new_res = game.resolutions[new_resolution_index];
 
     // Change window size
     rl.setWindowSize(new_res.width, new_res.height);
@@ -115,13 +115,13 @@ pub fn changeResolution(g: *Game, new_resolution_index: usize) void {
     Global.current_screen_height = new_res.height;
 
     // Update current resolution index
-    g.current_resolution = @intCast(new_resolution_index);
+    game.current_resolution = @intCast(new_resolution_index);
 
     // If the game was in fullscreen, toggle it back
-    if (g.settings.fullscreen) {
-        toggleFullscreenMode(g);
+    if (game.settings.fullscreen) {
+        toggleFullscreenMode(game);
     }
 
     // Handle any additional adjustments needed
-    handleResolutionChange(g);
+    handleSelfChange(game);
 }

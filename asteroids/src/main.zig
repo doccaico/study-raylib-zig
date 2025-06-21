@@ -1,36 +1,34 @@
-// const builtin = @import("builtin");
-const std = @import("std");
-const Config = @import("config.zig");
-const Sound = @import("sound.zig");
-const Game = @import("game.zig");
-const Resolution = @import("resolution.zig");
+const constant = @import("constant.zig");
+const Sound = @import("Sound.zig");
+const Game = @import("Game.zig");
+const Resolution = @import("Resolution.zig");
 
 const rl = @import("raylib");
 
 // Global screen dimensions
-// var screen_width: i32 = Config.screen_width;
-// var screen_height: i32 = Config.screen_height;
+// var screen_width: i32 = constant.screen_width;
+// var screen_height: i32 = constant.screen_height;
 
 pub fn main() !void {
-    rl.initWindow(Config.screen_width, Config.screen_height, Config.window_title);
+    rl.initWindow(constant.screen_width, constant.screen_height, constant.window_title);
     // defer rl.closeWindow();
 
     // Enable vsync
     rl.setWindowState(.{ .vsync_hint = true });
 
-    rl.setTargetFPS(Config.fps);
+    rl.setTargetFPS(constant.fps);
 
     // Disable default exit key (escape)
     rl.setExitKey(.null);
 
     // Initialize the sound system
-    var sound_manager: Sound.Manager = undefined;
-    try Sound.Manager.init(&sound_manager);
-    defer sound_manager.deinit();
+    var sound: Sound = undefined;
+    try Sound.init(&sound);
+    defer sound.deinit();
 
     // Initialize the Game itself
     var g: Game = undefined;
-    Game.init(&g, &sound_manager);
+    Game.init(&g, &sound);
 
     // var prng = std.Random.DefaultPrng.init(blk: {
     //     var seed: u64 = undefined;

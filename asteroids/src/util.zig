@@ -1,9 +1,9 @@
 const Global = @import("global.zig");
-const Player = @import("player.zig");
-const Game = @import("game.zig");
-const Asteroid = @import("asteroid.zig");
+const Player = @import("Player.zig");
+const Game = @import("Game.zig");
+const Asteroid = @import("Asteroid.zig");
 const max_asteroids = Asteroid.max_asteroids;
-const Bullet = @import("bullet.zig");
+const Bullet = @import("Bullet.zig");
 const max_bullets = Bullet.max_bullets;
 
 const rl = @import("raylib");

@@ -1,7 +1,7 @@
 const std = @import("std");
-const Config = @import("config.zig");
+const constant = @import("constant.zig");
 const Util = @import("util.zig");
-const Bullet = @import("bullet.zig");
+const Bullet = @import("Bullet.zig");
 const max_bullets = Bullet.max_bullets;
 const bullet_cooldown = Bullet.bullet_cooldown;
 
@@ -23,106 +23,106 @@ is_thrusting: bool,
 shoot_cooldown: i32,
 control_mode: ControlMode, // 0 = keyboard, 1 = mouse
 
-const Player = @This();
+const Self = @This();
 
-pub fn init(p: *Player) void {
+pub fn init(self: *Self) void {
     // Setting up initially
-    p.position = rl.Vector2.init(Config.screen_width / 2, Config.screen_height / 2);
-    p.velocity = rl.Vector2.zero();
-    p.rotation = 0.0;
-    p.rotation_velocity = 0.0; // Add rotation velocity for smooth turning
-    p.is_thrusting = false;
-    p.shoot_cooldown = 0;
-    p.control_mode = .keyboard; // Default to keyboard controls
+    self.position = rl.Vector2.init(constant.screen_width / 2, constant.screen_height / 2);
+    self.velocity = rl.Vector2.zero();
+    self.rotation = 0.0;
+    self.rotation_velocity = 0.0; // Add rotation velocity for smooth turning
+    self.is_thrusting = false;
+    self.shoot_cooldown = 0;
+    self.control_mode = .keyboard; // Default to keyboard controls
 }
 
-pub fn update(p: *Player, bullets: *[max_bullets]Bullet) void {
+pub fn update(self: *Self, bullets: *[max_bullets]Bullet) void {
     // Handle control mode switching
     if (rl.isKeyPressed(.m)) {
-        p.control_mode = if (p.control_mode == .keyboard) .mouse else .keyboard;
+        self.control_mode = if (self.control_mode == .keyboard) .mouse else .keyboard;
     }
 
-    if (p.control_mode == .keyboard) {
-        updatePlayerKeyboard(p, bullets);
+    if (self.control_mode == .keyboard) {
+        updatePlayerKeyboard(self, bullets);
     } else {
-        updatePlayerMouse(p, bullets);
+        updatePlayerMouse(self, bullets);
     }
 
     // Apply velocities to position (common for both control modes)
-    p.position.x += p.velocity.x;
-    p.position.y += p.velocity.y;
+    self.position.x += self.velocity.x;
+    self.position.y += self.velocity.y;
 
     // Apply dampening (space drag)
-    p.velocity.x *= ship_drag;
-    p.velocity.y *= ship_drag;
+    self.velocity.x *= ship_drag;
+    self.velocity.y *= ship_drag;
 
     // Apply rotation velocity and dampening for smooth rotation
-    p.rotation += p.rotation_velocity;
-    p.rotation_velocity *= 0.9; // Rotation dampening
+    self.rotation += self.rotation_velocity;
+    self.rotation_velocity *= 0.9; // Rotation dampening
 
     // Keep rotation in 0-360 range for clean math
-    if (p.rotation > 360)
-        p.rotation -= 360;
-    if (p.rotation < 0)
-        p.rotation += 360;
+    if (self.rotation > 360)
+        self.rotation -= 360;
+    if (self.rotation < 0)
+        self.rotation += 360;
 
     // Wrap position around the screen
-    Util.wrapPosition(&p.position);
+    Util.wrapPosition(&self.position);
 
     // Handle shooting cooldown (common for both control modes)
-    if (p.shoot_cooldown > 0) {
-        p.shoot_cooldown -= 1;
+    if (self.shoot_cooldown > 0) {
+        self.shoot_cooldown -= 1;
     }
 }
 
-fn updatePlayerKeyboard(p: *Player, bullets: *[max_bullets]Bullet) void {
+fn updatePlayerKeyboard(self: *Self, bullets: *[max_bullets]Bullet) void {
     // Smoother rotation with acceleration
     if (rl.isKeyDown(.left) or rl.isKeyDown(.a)) {
         // Add rotation acceleration with a cap
-        p.rotation_velocity = @max(p.rotation_velocity - 0.3, -rotation_speed);
+        self.rotation_velocity = @max(self.rotation_velocity - 0.3, -rotation_speed);
     } else if (rl.isKeyDown(.right) or rl.isKeyDown(.d)) {
         // Add rotation acceleration with a cap
-        p.rotation_velocity = @min(p.rotation_velocity + 0.3, rotation_speed);
+        self.rotation_velocity = @min(self.rotation_velocity + 0.3, rotation_speed);
     } else {
         // If no keys are pressed, apply more dampening to stop rotation more quickly
-        p.rotation_velocity *= 0.85;
+        self.rotation_velocity *= 0.85;
     }
 
     // Handle thrusting with smoother acceleration
-    p.is_thrusting = rl.isKeyDown(.up) or rl.isKeyDown(.w);
-    if (p.is_thrusting) {
+    self.is_thrusting = rl.isKeyDown(.up) or rl.isKeyDown(.w);
+    if (self.is_thrusting) {
         // Calculate the acceleration vector based on the ship's rotation
-        const cosA = @cos(p.rotation * std.math.rad_per_deg);
-        const sinA = @sin(p.rotation * std.math.rad_per_deg);
+        const cosA = @cos(self.rotation * std.math.rad_per_deg);
+        const sinA = @sin(self.rotation * std.math.rad_per_deg);
 
         // Apply acceleration with slightly increasing force for better control
-        var thrust_factor = ship_acceleration * (1.0 + 0.1 * (@abs(p.velocity.x) + @abs(p.velocity.y)) / 10.0);
+        var thrust_factor = ship_acceleration * (1.0 + 0.1 * (@abs(self.velocity.x) + @abs(self.velocity.y)) / 10.0);
         thrust_factor = @min(thrust_factor, ship_acceleration * 1.5); // Cap the boost
 
-        p.velocity.x += cosA * thrust_factor;
-        p.velocity.y += sinA * thrust_factor;
+        self.velocity.x += cosA * thrust_factor;
+        self.velocity.y += sinA * thrust_factor;
 
         // Cap maximum velocity for better control
-        const current_speed = @sqrt(p.velocity.x * p.velocity.x + p.velocity.y * p.velocity.y);
+        const current_speed = @sqrt(self.velocity.x * self.velocity.x + self.velocity.y * self.velocity.y);
         if (current_speed > 5.0) {
-            p.velocity.x = (p.velocity.x / current_speed) * 5.0;
-            p.velocity.y = (p.velocity.y / current_speed) * 5.0;
+            self.velocity.x = (self.velocity.x / current_speed) * 5.0;
+            self.velocity.y = (self.velocity.y / current_speed) * 5.0;
         }
     }
 
     // Shooting with keyboard
-    if ((rl.isKeyDown(.space) or rl.isKeyPressed(.space)) and p.shoot_cooldown == 0) {
-        Bullet.shootBullets(bullets, p.position, p.rotation);
-        p.shoot_cooldown = bullet_cooldown;
+    if ((rl.isKeyDown(.space) or rl.isKeyPressed(.space)) and self.shoot_cooldown == 0) {
+        Bullet.shootBullets(bullets, self.position, self.rotation);
+        self.shoot_cooldown = bullet_cooldown;
     }
 }
 
-fn updatePlayerMouse(p: *Player, bullets: *[max_bullets]Bullet) void {
+fn updatePlayerMouse(self: *Self, bullets: *[max_bullets]Bullet) void {
     // Get mouse position
     const mouse_pos = rl.getMousePosition();
 
     // Calculate direction to mouse from player
-    const direction = rl.Vector2.init(mouse_pos.x - p.position.x, mouse_pos.y - p.position.y);
+    const direction = rl.Vector2.init(mouse_pos.x - self.position.x, mouse_pos.y - self.position.y);
 
     // Calculate angle to mouse (in degrees)
     var target_angle = std.math.atan2(direction.y, direction.x) * std.math.deg_per_rad;
@@ -130,7 +130,7 @@ fn updatePlayerMouse(p: *Player, bullets: *[max_bullets]Bullet) void {
         target_angle += 360.0;
 
     // Smoothly rotate toward mouse pointer
-    var angle_diff = target_angle - p.rotation;
+    var angle_diff = target_angle - self.rotation;
 
     // Handle angle wrapping
     if (angle_diff > 180)
@@ -139,33 +139,33 @@ fn updatePlayerMouse(p: *Player, bullets: *[max_bullets]Bullet) void {
         angle_diff += 360;
 
     // Set rotation velocity based on how far we need to turn
-    p.rotation_velocity = angle_diff * 0.1;
+    self.rotation_velocity = angle_diff * 0.1;
 
     // Cap rotation speed
-    if (p.rotation_velocity > rotation_speed)
-        p.rotation_velocity = rotation_speed;
-    if (p.rotation_velocity < -rotation_speed)
-        p.rotation_velocity = -rotation_speed;
+    if (self.rotation_velocity > rotation_speed)
+        self.rotation_velocity = rotation_speed;
+    if (self.rotation_velocity < -rotation_speed)
+        self.rotation_velocity = -rotation_speed;
 
     // Right mouse button for thrust
-    p.is_thrusting = rl.isMouseButtonDown(.right);
-    if (p.is_thrusting) {
-        const cosA = @cos(p.rotation * std.math.rad_per_deg);
-        const sinA = @sin(p.rotation * std.math.rad_per_deg);
-        p.velocity.x += cosA * ship_acceleration;
-        p.velocity.y += sinA * ship_acceleration;
+    self.is_thrusting = rl.isMouseButtonDown(.right);
+    if (self.is_thrusting) {
+        const cosA = @cos(self.rotation * std.math.rad_per_deg);
+        const sinA = @sin(self.rotation * std.math.rad_per_deg);
+        self.velocity.x += cosA * ship_acceleration;
+        self.velocity.y += sinA * ship_acceleration;
 
         // Cap maximum velocity for better control
-        const current_speed = @sqrt(p.velocity.x * p.velocity.x + p.velocity.y * p.velocity.y);
+        const current_speed = @sqrt(self.velocity.x * self.velocity.x + self.velocity.y * self.velocity.y);
         if (current_speed > 5.0) {
-            p.velocity.x = (p.velocity.x / current_speed) * 5.0;
-            p.velocity.y = (p.velocity.y / current_speed) * 5.0;
+            self.velocity.x = (self.velocity.x / current_speed) * 5.0;
+            self.velocity.y = (self.velocity.y / current_speed) * 5.0;
         }
     }
 
     // Left mouse button for shooting
-    if (rl.isMouseButtonDown(.left) and p.shoot_cooldown == 0) {
-        Bullet.shootBullets(bullets, p.position, p.rotation);
-        p.shoot_cooldown = bullet_cooldown;
+    if (rl.isMouseButtonDown(.left) and self.shoot_cooldown == 0) {
+        Bullet.shootBullets(bullets, self.position, self.rotation);
+        self.shoot_cooldown = bullet_cooldown;
     }
 }

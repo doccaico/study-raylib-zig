@@ -1,8 +1,8 @@
 const std = @import("std");
-const Sound = @import("sound.zig");
+const Sound = @import("Sound.zig");
 const Global = @import("global.zig");
-const Game = @import("game.zig");
-const Resolution = @import("resolution.zig").Resolution;
+const Game = @import("Game.zig");
+const Resolution = @import("Resolution.zig");
 const max_resolutions = Resolution.max_resolutions;
 
 const rl = @import("raylib");
@@ -39,14 +39,14 @@ pub fn updateMainMenu(g: *Game) bool {
 
     // Play sound on menu navigation
     if (menu_changed and g.settings.sound_enabled) {
-        Sound.playGameSound(g.sound_manager, .menu_select);
+        Sound.playGameSound(g.sound, .menu_select);
     }
 
     // Selected
     if (rl.isKeyPressed(.enter)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound_manager, .menu_select);
+            Sound.playGameSound(g.sound, .menu_select);
         }
 
         switch (g.selected_option) {
@@ -83,14 +83,14 @@ pub fn updateOptionsMenu(g: *Game) void {
 
     // Play sound on menu navigation
     if (menu_changed and g.settings.sound_enabled) {
-        Sound.playGameSound(g.sound_manager, .menu_select);
+        Sound.playGameSound(g.sound, .menu_select);
     }
 
     // Change settings with left/right keybinds
     if (rl.isKeyPressed(.right) or rl.isKeyPressed(.left)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound_manager, .menu_select);
+            Sound.playGameSound(g.sound, .menu_select);
         }
 
         // toggle or cycle values
@@ -98,12 +98,12 @@ pub fn updateOptionsMenu(g: *Game) void {
             menu_sound => {
                 g.settings.sound_enabled = !g.settings.sound_enabled;
                 // Update sound manager
-                Sound.toggleSoundEnabled(g.sound_manager, g.settings.sound_enabled);
+                Sound.toggleSoundEnabled(g.sound, g.settings.sound_enabled);
             },
             menu_music => {
                 g.settings.music_enabled = !g.settings.music_enabled;
                 // Update music manager
-                Sound.toggleMusicEnabled(g.sound_manager, g.settings.music_enabled);
+                Sound.toggleMusicEnabled(g.sound, g.settings.music_enabled);
             },
             menu_fps => {
                 g.settings.show_fps = !g.settings.show_fps;
@@ -136,7 +136,7 @@ pub fn updateOptionsMenu(g: *Game) void {
     if (rl.isKeyPressed(.enter)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound_manager, .menu_select);
+            Sound.playGameSound(g.sound, .menu_select);
         }
 
         if (g.selected_option == menu_back) {
@@ -149,7 +149,7 @@ pub fn updateOptionsMenu(g: *Game) void {
     if (rl.isKeyPressed(.escape)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound_manager, .menu_select);
+            Sound.playGameSound(g.sound, .menu_select);
         }
 
         g.state = .main_menu;
@@ -162,7 +162,7 @@ pub fn updateControlsMenu(g: *Game) void {
     if (rl.isKeyPressed(.enter) or rl.isKeyPressed(.escape)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound_manager, .menu_select);
+            Sound.playGameSound(g.sound, .menu_select);
         }
 
         g.state = .main_menu;
@@ -182,13 +182,13 @@ pub fn updatePauseMenu(g: *Game) void {
 
     // Play sound on menu navigation
     if (menu_changed and g.settings.sound_enabled) {
-        Sound.playGameSound(g.sound_manager, .menu_select);
+        Sound.playGameSound(g.sound, .menu_select);
     }
 
     if (rl.isKeyPressed(.enter)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound_manager, .menu_select);
+            Sound.playGameSound(g.sound, .menu_select);
         }
 
         if (g.selected_option == 0) {
@@ -203,7 +203,7 @@ pub fn updatePauseMenu(g: *Game) void {
     if (rl.isKeyPressed(.escape) or rl.isKeyPressed(.p)) {
         // Play selection sound
         if (g.settings.sound_enabled) {
-            Sound.playGameSound(g.sound_manager, .menu_select);
+            Sound.playGameSound(g.sound, .menu_select);
         }
 
         g.state = .game_play;
